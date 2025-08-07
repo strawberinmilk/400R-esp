@@ -16,6 +16,14 @@ public:
   int oldEncoderValue;
   void setCount(int value);
   boolean updateEncoder(int min, int max);
+
+  // 汎用エンコーダー処理関数
+  int runEncoder(
+      int initialValue,
+      int minValue,
+      int maxValue,
+      void (*onValueChange)(int value),
+      bool (*isBreak)());
 };
 
 #endif

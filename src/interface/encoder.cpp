@@ -56,6 +56,37 @@ boolean Encoder::updateEncoder(int min, int max)
   return true;
 }
 
+// 汎用エンコーダー処理関数
+int Encoder::runEncoder(
+    int initialValue,
+    int minValue,
+    int maxValue,
+    void (*onValueChange)(int value),
+    bool (*isBreak)())
+{
+  setCount(initialValue);
+  encoderEnabled = true;
+
+  while (true)
+  {
+    // エンコーダーの値が変わった場合
+    if (updateEncoder(minValue, maxValue))
+    {
+      onValueChange(currentEncoderValue);
+    }
+
+    // 終了条件をチェック
+    if (isBreak())
+    {
+      encoderEnabled = false;
+      break;
+    }
+
+    delay(1);
+  }
+  return currentEncoderValue;
+}
+
 // エンコーダサンプル
 // encoder.setCount(初期値);
 // encoderEnabled = true;
