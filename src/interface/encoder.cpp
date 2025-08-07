@@ -14,12 +14,21 @@ Encoder::Encoder()
   esp32Encoder.attachSingleEdge(ENCODER_A_PIN, ENCODER_B_PIN);
 }
 
+/**
+ * カウント値を設定
+ * @param value 設定するカウント値
+ */
 void Encoder::setCount(int value)
 {
   esp32Encoder.setCount(value);
 }
 
-// エンコーダ用汎用関数
+/**
+ * エンコーダの値を更新
+ * @param min 最小値
+ * @param max 最大値
+ * @return 値が更新された場合はtrue、そうでない場合はfalse
+ */
 boolean Encoder::updateEncoder(int min, int max)
 {
   if (!encoderEnabled)

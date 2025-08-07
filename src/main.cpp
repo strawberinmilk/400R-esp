@@ -19,7 +19,7 @@ void setup()
 {
   Serial.begin(115200);
 
-  display.initLcd();
+  display.init();
   button.init(buttonPins);
   setMode.init();
   footLight.init();

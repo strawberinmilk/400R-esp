@@ -4,11 +4,14 @@
 
 FootLight::FootLight()
 {
+  // TODO: フラッシュメモリから取得するよう修正
   VOLUME = 255;
   IS_LIGHTING = true;
 }
 
-// 点灯/消灯処理
+/**
+ * 点灯/消灯処理
+ */
 void FootLight::lighting()
 {
   if (IS_LIGHTING)
@@ -21,7 +24,9 @@ void FootLight::lighting()
   }
 }
 
-// 初期化処理
+/**
+ * 初期化処理
+ */
 void FootLight::init()
 {
   pinMode(FOOTLIGHT_PIN, OUTPUT);
@@ -30,7 +35,9 @@ void FootLight::init()
   lighting();
 }
 
-// 明るさ設定
+/**
+ * フットライトの明るさを設定
+ */
 void FootLight::setVolume(int volume)
 {
   // フットライトの明るさを設定
@@ -49,21 +56,30 @@ void FootLight::setVolume(int volume)
   lighting();
 }
 
+/**
+ * フットライトの点灯状態を設定
+ * @param isLighting 点灯状態
+ */
 void FootLight::setIsLighting(boolean isLighting)
 {
-  // フットライトの点灯状態を設定
   IS_LIGHTING = isLighting;
   Serial.println(IS_LIGHTING ? "Foot Light ON" : "Foot Light OFF");
   lighting();
 }
 
-// 明るさ取得
+/**
+ * フットライトの明るさを取得
+ * @return フットライトの明るさ
+ */
 int FootLight::getVolume()
 {
   return VOLUME;
 }
 
-// 点灯状態取得
+/**
+ * フットライトの点灯状態を取得
+ * @return フットライトの点灯状態
+ */
 boolean FootLight::isLighting()
 {
   return IS_LIGHTING;
