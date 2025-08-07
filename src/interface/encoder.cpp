@@ -10,7 +10,6 @@ int oldEncoderValue = 0;
 // エンコーダ用変数
 Encoder::Encoder()
 {
-  pinMode(SELECT_SW_PIN, INPUT_PULLUP);
   ESP32Encoder::useInternalWeakPullResistors = puType::up;
   esp32Encoder.attachSingleEdge(ENCODER_A_PIN, ENCODER_B_PIN);
 }

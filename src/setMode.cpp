@@ -1,18 +1,20 @@
 #include "setMode.h"
 #include "output/footLight.h"
 #include "interface/display.h"
+#include "interface/button.h"
 #include "interface/encoder.h"
 #include "config/pinConfig.h"
 
 extern Display display;
 extern FootLight footLight;
 extern Encoder encoder;
+extern Button button;
 
 // フットライト明るさ調整
 void SetMode::footLightVolume()
 {
   display.print("Foot Light Volume", "");
-  delay(1000);
+  // delay(1000);
 
   encoder.setCount(footLight.getVolume());
   encoder.encoderEnabled = true;
@@ -23,7 +25,7 @@ void SetMode::footLightVolume()
       display.print("Foot Light Volume", String(encoder.currentEncoderValue).c_str());
       footLight.setVolume(encoder.currentEncoderValue);
     }
-    if (digitalRead(SELECT_SW_PIN) == LOW)
+    if (button.isPushAwait(SELECT_SW_PIN))
     {
       encoder.encoderEnabled = false;
       break;
@@ -35,7 +37,7 @@ void SetMode::footLightVolume()
 void SetMode::footLightMode()
 {
   display.print("Foot Light Mode", "");
-  delay(1000);
+  // delay(1000);
 
   encoder.setCount(footLight.isLighting() ? 1 : 0);
   encoder.encoderEnabled = true;
@@ -46,7 +48,7 @@ void SetMode::footLightMode()
       display.print("Foot Light Mode", encoder.currentEncoderValue == 1 ? "ON" : "OFF");
       footLight.setIsLighting(encoder.currentEncoderValue == 1);
     }
-    if (digitalRead(SELECT_SW_PIN) == LOW)
+    if (button.isPushAwait(SELECT_SW_PIN))
     {
       encoder.encoderEnabled = false;
       break;
@@ -61,8 +63,8 @@ void (SetMode::*modes[])() = {
 };
 // モード表示名の配列
 const char *modeNames[] = {
-    "Foot Light Vol",
-    "Foot Light Mode",
+    "Foot Light Vol", // 14文字
+    "Foot Light Mode", // 15文字
 };
 // モードの数を計算し定数化
 size_t modeLength = sizeof(modes) / sizeof(modes[0]);
@@ -76,7 +78,7 @@ void SetMode::init()
 void SetMode::select()
 {
   display.print("Mode Selected", "please select");
-  delay(1000);
+  // delay(1000);
   encoder.setCount(0);
   encoder.encoderEnabled = true;
   while (true)
@@ -85,7 +87,7 @@ void SetMode::select()
     {
       display.print("Mode Selected", modeNames[encoder.currentEncoderValue]);
     }
-    if (digitalRead(SELECT_SW_PIN) == LOW)
+    if (button.isPushAwait(SELECT_SW_PIN))
     {
       encoder.encoderEnabled = false;
       (this->*modes[encoder.currentEncoderValue])();
@@ -93,5 +95,5 @@ void SetMode::select()
       delay(1000);
       break;
     }
-  } // while
+  }
 }
