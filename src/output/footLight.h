@@ -3,19 +3,41 @@
 
 #include <Arduino.h>
 
-class FootLight {
-  private:
-    int VOLUME;
-    boolean IS_LIGHTING;
-    void lighting();
+enum FootLightMode
+{
+  MODE_OFF = 0,
+  MODE_ON = 1,
+  MODE_AUTO_SIDE_BRAKE = 2,
+  MODE_AUTO_ILLUMI = 3
+};
 
-  public:
-    FootLight();
-    void init();
-    void setVolume(int volume);
-    void setIsLighting(boolean isLighting);
-    int getVolume();
-    boolean isLighting();
+// FootLightModeの要素数定数
+static const int FOOTLIGHT_MODE_COUNT = 4;
+
+// FootLightModeに対応するテキスト配列
+static const char *const FootLightModeTexts[] = {
+    "OFF",             // MODE_OFF = 0
+    "ON",              // MODE_ON = 1
+    "Auto Side Brake", // MODE_AUTO_SIDE_BRAKE = 2
+    "Auto Illumi"      // MODE_AUTO_ILLUMI = 3
+};
+
+class FootLight
+{
+private:
+  int VOLUME;
+  FootLightMode currentMode;
+  void lighting();
+
+public:
+  FootLight();
+  void init();
+  void setVolume(int volume);
+  void setMode(FootLightMode mode);
+  int getVolume();
+  FootLightMode getMode();
+  static int getModeCount();                          // FootLightModeの要素数を取得
+  static const char *getModeText(FootLightMode mode); // モードに対応するテキストを取得
 };
 
 #endif

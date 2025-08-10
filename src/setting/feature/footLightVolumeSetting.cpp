@@ -61,7 +61,6 @@ void FootLightVolumeSetting::cleanup()
 {
   display.print("Foot Light Volume", "success");
   encoder.stopEncoder();
-  settingManager.currentFeature = &standbyMode;
   delay(500);
-  display.print("standby", "");
+  settingManager.currentFeature = &standbyMode;
 }

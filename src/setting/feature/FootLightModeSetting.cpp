@@ -28,13 +28,13 @@ FootLightModeSetting::FootLightModeSetting()
  */
 void FootLightModeSetting::start()
 {
-  // 現在のモード状態を取得（ON=1, OFF=0）
-  int initialValue = footLight.isLighting() ? 1 : 0;
+  // 現在のモードを取得
+  int initialValue = (int)footLight.getMode();
 
   encoder.startEncoder(
       initialValue,
       0,
-      1);
+      FootLight::getModeCount() - 1); // 0 から モード数-1 まで
 }
 
 /**
@@ -45,11 +45,11 @@ void FootLightModeSetting::update()
   if (encoder.isUpdateEncoder())
   {
     // エンコーダの値が変わった場合
-    bool isOn = (encoder.getCurrentValue() == 1);
-    const char *modeText = isOn ? "ON" : "OFF";
+    int currentMode = encoder.getCurrentValue();
+    const char *modeText = FootLight::getModeText((FootLightMode)currentMode);
 
     display.print("Foot Light Mode", modeText);
-    footLight.setIsLighting(isOn);
+    footLight.setMode((FootLightMode)currentMode);
   }
 
   if (button.isPushAwait(SELECT_SW_PIN))
@@ -65,7 +65,6 @@ void FootLightModeSetting::cleanup()
 {
   display.print("Foot Light Mode", "success");
   encoder.stopEncoder();
-  settingManager.currentFeature = &standbyMode;
   delay(500);
-  display.print("standby", "");
+  settingManager.currentFeature = &standbyMode;
 }

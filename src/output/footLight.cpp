@@ -6,7 +6,7 @@ FootLight::FootLight()
 {
   // TODO: フラッシュメモリから取得するよう修正
   VOLUME = 255;
-  IS_LIGHTING = true;
+  currentMode = MODE_ON;
 }
 
 /**
@@ -14,13 +14,17 @@ FootLight::FootLight()
  */
 void FootLight::lighting()
 {
-  if (IS_LIGHTING)
+  // モードに基づいて点灯制御
+  if (currentMode == MODE_OFF)
   {
-    ledcWrite(PWM_CH, VOLUME);
+    ledcWrite(PWM_CH, 0);
+    Serial.println("Foot Light OFF");
   }
   else
   {
-    ledcWrite(PWM_CH, 0);
+    // MODE_ON, MODE_AUTO_SIDE_BRAKE, MODE_AUTO_ILLUMI（現在は全て常時点灯）
+    ledcWrite(PWM_CH, VOLUME);
+    Serial.println("Foot Light ON");
   }
 }
 
@@ -57,13 +61,14 @@ void FootLight::setVolume(int volume)
 }
 
 /**
- * フットライトの点灯状態を設定
- * @param isLighting 点灯状態
+ * フットライトのモードを設定
+ * @param mode 設定するモード
  */
-void FootLight::setIsLighting(boolean isLighting)
+void FootLight::setMode(FootLightMode mode)
 {
-  IS_LIGHTING = isLighting;
-  Serial.println(IS_LIGHTING ? "Foot Light ON" : "Foot Light OFF");
+  currentMode = mode;
+
+  // モード変更時に点灯状態を更新
   lighting();
 }
 
@@ -77,10 +82,34 @@ int FootLight::getVolume()
 }
 
 /**
- * フットライトの点灯状態を取得
- * @return フットライトの点灯状態
+ * フットライトのモードを取得
+ * @return 現在のモード
  */
-boolean FootLight::isLighting()
+FootLightMode FootLight::getMode()
 {
-  return IS_LIGHTING;
+  return currentMode;
+}
+
+/**
+ * FootLightModeの要素数を取得
+ * @return モードの総数
+ */
+int FootLight::getModeCount()
+{
+  return static_cast<int>(FOOTLIGHT_MODE_COUNT);
+}
+
+/**
+ * FootLightModeに対応するテキストを取得
+ * @param mode 対象のモード
+ * @return モードに対応するテキスト
+ */
+const char *FootLight::getModeText(FootLightMode mode)
+{
+  // 配列の範囲チェック
+  if (mode >= 0 && mode < FOOTLIGHT_MODE_COUNT)
+  {
+    return FootLightModeTexts[mode];
+  }
+  return "Unknown";
 }
