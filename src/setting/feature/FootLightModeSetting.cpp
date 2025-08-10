@@ -28,10 +28,10 @@ void FootLightModeSetting::start()
   // 現在のモード状態を取得（ON=1, OFF=0）
   int initialValue = footLight.isLighting() ? 1 : 0;
 
-  encoder.startEncoderV2(
+  encoder.startEncoder(
       initialValue,
-      0,  // 最小値: OFF
-      1); // 最大値: ON
+      0,
+      1);
 }
 
 /**
@@ -39,7 +39,7 @@ void FootLightModeSetting::start()
  */
 void FootLightModeSetting::update()
 {
-  if (encoder.updateEncoderV2())
+  if (encoder.updateEncoder())
   {
     // エンコーダの値が変わった場合
     bool isOn = (encoder.currentEncoderValue == 1);
@@ -61,7 +61,7 @@ void FootLightModeSetting::update()
 void FootLightModeSetting::cleanup()
 {
   display.print("Foot Light Mode", "success");
-  encoder.stopEncoderV2();
+  encoder.stopEncoder();
   settingManager.currentFeature = nullptr;
   delay(500);
   display.print("standby", "");

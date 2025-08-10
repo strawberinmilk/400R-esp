@@ -1,5 +1,5 @@
-#ifndef MODESELECT_H
-#define MODESELECT_H
+#ifndef MODE_SELECT_H
+#define MODE_SELECT_H
 
 #include "../BaseSetting.h"
 
@@ -9,9 +9,6 @@ private:
 
 public:
   ModeSelect();
-
-  // BaseSettingの純粋仮想関数をオーバーライド
-  const char* name = "ModeSelect";
   void start() override;
   void update() override;
   void cleanup() override;

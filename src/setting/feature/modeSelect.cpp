@@ -19,6 +19,8 @@ extern SettingManager settingManager;
 
 ModeSelect::ModeSelect()
 {
+  name = "ModeSelect";
+
   settingManager.selectedMode = 0;
   settingManager.modeSelected = false;
 }
@@ -30,7 +32,7 @@ void ModeSelect::start()
 
   // エンコーダーを初期化（1からMODE_COUNT-1の範囲）
   // 0はセレクトモードなので、1から開始
-  encoder.startEncoderV2(1, 1, settingManager.MODE_COUNT - 1);
+  encoder.startEncoder(1, 1, settingManager.MODE_COUNT - 1);
   settingManager.selectedMode = 0;
   settingManager.modeSelected = true;
 
@@ -41,7 +43,7 @@ void ModeSelect::start()
 void ModeSelect::update()
 {
   // エンコーダの値が変わった場合
-  if (encoder.updateEncoderV2())
+  if (encoder.updateEncoder())
   {
     settingManager.selectedMode = encoder.currentEncoderValue;
     display.print("Mode Select", settingManager.modeNames[settingManager.selectedMode]);
@@ -70,7 +72,7 @@ void ModeSelect::update()
 void ModeSelect::cleanup()
 {
   // エンコーダー停止
-  encoder.stopEncoderV2();
+  encoder.stopEncoder();
   settingManager.currentFeature = nullptr;
   settingManager.selectedMode = -1;
   settingManager.modeSelected = false;
@@ -81,5 +83,5 @@ void ModeSelect::cleanup()
 void ModeSelect::startFeature(BaseSetting &newFeature)
 {
   settingManager.currentFeature = &newFeature;
-  newFeature.start();
+  settingManager.currentFeature->start();
 }

@@ -22,7 +22,7 @@ SettingManager::SettingManager()
 }
 
 /**
- * 更新処理
+ * ループで呼ばれる処理
  */
 void SettingManager::update()
 {

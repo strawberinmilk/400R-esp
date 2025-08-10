@@ -7,7 +7,9 @@ volatile bool encoderEnabled = false;
 int currentEncoderValue = 0;
 int oldEncoderValue = 0;
 
-// エンコーダ用変数
+/**
+ * コンストラクタ
+ */
 Encoder::Encoder()
 {
   ESP32Encoder::useInternalWeakPullResistors = puType::up;
@@ -56,46 +58,15 @@ boolean Encoder::updateEncoder(int min, int max)
   return true;
 }
 
-// // 汎用エンコーダー処理関数
-// int Encoder::runEncoder(
-//     int initialValue,
-//     int minValue,
-//     int maxValue,
-//     void (*onValueChange)(int value),
-//     bool (*isBreak)())
-// {
-//   setCount(initialValue);
-//   encoderEnabled = true;
-
-//   while (true)
-//   {
-//     // エンコーダーの値が変わった場合
-//     if (updateEncoder(minValue, maxValue))
-//     {
-//       onValueChange(currentEncoderValue);
-//     }
-
-//     // 終了条件をチェック
-//     if (isBreak())
-//     {
-//       encoderEnabled = false;
-//       break;
-//     }
-
-//     delay(1);
-//   }
-//   return currentEncoderValue;
-// }
-
 /**
  * 非ブロッキング版エンコーダー処理関数
  */
-void Encoder::startEncoderV2(int initialValue, int minValue, int maxValue)
+void Encoder::startEncoder(int initialValue, int minValue, int maxValue)
 {
   // 既に実行中の場合は停止
   if (isRunningV2)
   {
-    stopEncoderV2();
+    stopEncoder();
   }
 
   // パラメータ設定
@@ -110,7 +81,7 @@ void Encoder::startEncoderV2(int initialValue, int minValue, int maxValue)
   Serial.println("Encoder V2 started");
 }
 
-bool Encoder::updateEncoderV2()
+bool Encoder::updateEncoder()
 {
   // 実行中でない場合は何もしない
   if (!isRunningV2)
@@ -127,7 +98,7 @@ bool Encoder::updateEncoderV2()
   return false; // 値は変更されていない
 }
 
-void Encoder::stopEncoderV2()
+void Encoder::stopEncoder()
 {
   if (isRunningV2)
   {

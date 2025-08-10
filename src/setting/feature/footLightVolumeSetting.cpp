@@ -25,8 +25,9 @@ FootLightVolumeSetting::FootLightVolumeSetting()
  */
 void FootLightVolumeSetting::start()
 {
-  encoder.startEncoderV2(
-      footLight.getVolume(),
+  int initialVolume = footLight.getVolume();
+  encoder.startEncoder(
+      initialVolume,
       0,
       255);
 }
@@ -36,7 +37,7 @@ void FootLightVolumeSetting::start()
  */
 void FootLightVolumeSetting::update()
 {
-  if (encoder.updateEncoderV2())
+  if (encoder.updateEncoder())
   {
     // エンコーダの値が変わった場合
     // TODO: 液晶一部分の書換にする
@@ -56,7 +57,7 @@ void FootLightVolumeSetting::update()
 void FootLightVolumeSetting::cleanup()
 {
   display.print("Foot Light Volume", "success");
-  encoder.stopEncoderV2();
+  encoder.stopEncoder();
   settingManager.currentFeature = nullptr;
   delay(500);
   display.print("standby", "");

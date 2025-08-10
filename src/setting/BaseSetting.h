@@ -1,10 +1,10 @@
-#ifndef BASESETTING_H
-#define BASESETTING_H
+#ifndef BASE_SETTING_H
+#define BASE_SETTING_H
 
 class BaseSetting
 {
 public:
-  char *name;
+  const char *name;
 
   // 仮想デストラクタ
   virtual ~BaseSetting() = default;

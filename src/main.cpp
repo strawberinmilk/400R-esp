@@ -1,20 +1,23 @@
 #include <Arduino.h>
 #include <Wire.h>
+// config
 #include "config/pinConfig.h"
-// #include "setMode.h"
+// interface
 #include "interface/encoder.h"
 #include "interface/display.h"
 #include "interface/button.h"
+// output
 #include "output/footLight.h"
-
+// feature
 #include "setting/manager.h"
 
-// SetMode setMode;
+// interface
 Encoder encoder;
 Display display;
 Button button;
+// output
 FootLight footLight;
-
+// feature
 SettingManager settingManager;
 
 int buttonPins[] = {SELECT_SW_PIN};
@@ -50,12 +53,10 @@ void setup()
   //   Serial.println(error); // 0: OK, 2: NACK on address, etc.
   // }
 
-  // footLightVolumeSetting.init();
   delay(1000);
 }
 
 void loop()
 {
   settingManager.update();
-  // footLightVolumeSetting.update();
 }
