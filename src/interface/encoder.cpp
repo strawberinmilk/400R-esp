@@ -56,49 +56,83 @@ boolean Encoder::updateEncoder(int min, int max)
   return true;
 }
 
-// 汎用エンコーダー処理関数
-int Encoder::runEncoder(
-    int initialValue,
-    int minValue,
-    int maxValue,
-    void (*onValueChange)(int value),
-    bool (*isBreak)())
+// // 汎用エンコーダー処理関数
+// int Encoder::runEncoder(
+//     int initialValue,
+//     int minValue,
+//     int maxValue,
+//     void (*onValueChange)(int value),
+//     bool (*isBreak)())
+// {
+//   setCount(initialValue);
+//   encoderEnabled = true;
+
+//   while (true)
+//   {
+//     // エンコーダーの値が変わった場合
+//     if (updateEncoder(minValue, maxValue))
+//     {
+//       onValueChange(currentEncoderValue);
+//     }
+
+//     // 終了条件をチェック
+//     if (isBreak())
+//     {
+//       encoderEnabled = false;
+//       break;
+//     }
+
+//     delay(1);
+//   }
+//   return currentEncoderValue;
+// }
+
+/**
+ * 非ブロッキング版エンコーダー処理関数
+ */
+void Encoder::startEncoderV2(int initialValue, int minValue, int maxValue)
 {
+  // 既に実行中の場合は停止
+  if (isRunningV2)
+  {
+    stopEncoderV2();
+  }
+
+  // パラメータ設定
+  minValueV2 = minValue;
+  maxValueV2 = maxValue;
+
+  // エンコーダー初期化
   setCount(initialValue);
   encoderEnabled = true;
+  isRunningV2 = true;
 
-  while (true)
-  {
-    // エンコーダーの値が変わった場合
-    if (updateEncoder(minValue, maxValue))
-    {
-      onValueChange(currentEncoderValue);
-    }
-
-    // 終了条件をチェック
-    if (isBreak())
-    {
-      encoderEnabled = false;
-      break;
-    }
-
-    delay(1);
-  }
-  return currentEncoderValue;
+  Serial.println("Encoder V2 started");
 }
 
-// エンコーダサンプル
-// encoder.setCount(初期値);
-// encoderEnabled = true;
-// while (true)
-// {
-//   if (updateEncoder(最小値, 最大値))
-//   {
-//     Serial.println(currentEncoderValue);
-//   }
-//   if (エンコーダを抜ける条件)
-//   {
-//     encoderEnabled = false;
-//     break;
-//   }
-// }
+bool Encoder::updateEncoderV2()
+{
+  // 実行中でない場合は何もしない
+  if (!isRunningV2)
+  {
+    return false;
+  }
+
+  // エンコーダーの値が変わった場合
+  if (updateEncoder(minValueV2, maxValueV2))
+  {
+    return true; // 値が変更された
+  }
+
+  return false; // 値は変更されていない
+}
+
+void Encoder::stopEncoderV2()
+{
+  if (isRunningV2)
+  {
+    encoderEnabled = false;
+    isRunningV2 = false;
+    Serial.println("Encoder V2 stopped");
+  }
+}
