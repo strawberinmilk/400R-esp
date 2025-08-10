@@ -43,9 +43,9 @@ void ModeSelect::start()
 void ModeSelect::update()
 {
   // エンコーダの値が変わった場合
-  if (encoder.updateEncoder())
+  if (encoder.isUpdateEncoder())
   {
-    settingManager.selectedMode = encoder.currentEncoderValue;
+    settingManager.selectedMode = encoder.getCurrentValue();
     display.print("Mode Select", settingManager.modeNames[settingManager.selectedMode]);
   }
 
@@ -53,7 +53,7 @@ void ModeSelect::update()
   if (button.isPushAwait(SELECT_SW_PIN))
   {
     this->cleanup();
-    settingManager.selectedMode = encoder.currentEncoderValue;
+    settingManager.selectedMode = encoder.getCurrentValue();
 
     // 選択されたモードを起動
     if (settingManager.selectedMode == 1)

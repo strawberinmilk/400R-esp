@@ -4,8 +4,8 @@
 #define LCD_WIDTH 16
 #define LCD_HEIGHT 2
 
-#include <ST7032.h>
-ST7032 lcd;
+#include <ST7032_asukiaaa.h>
+ST7032_asukiaaa lcd;
 
 // void Display::initLcd()
 // {

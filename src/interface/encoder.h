@@ -8,26 +8,23 @@ class Encoder
 {
 private:
   ESP32Encoder esp32Encoder;
+  bool isRunning = false;
+  int minValue = 0;
+  int maxValue = 100;
+  int currentEncoderValue = 0;
+  int oldEncoderValue = 0;
 
-public:
-  Encoder();
-  volatile bool encoderEnabled;
-  int currentEncoderValue;
-  int oldEncoderValue;
   void setCount(int value);
   boolean updateEncoder(int min, int max);
 
-  // 非ブロッキング版エンコーダー処理関数
-private:
-  bool isRunningV2 = false;
-  int minValueV2 = 0;
-  int maxValueV2 = 100;
-
 public:
+  Encoder();
+  int getCurrentValue();
+
+  // 非ブロッキング版エンコーダー処理関数
   void startEncoder(int initialValue, int minValue, int maxValue);
-  bool updateEncoder(); // 非ブロッキング更新、値が変化した場合trueを返す
+  bool isUpdateEncoder();
   void stopEncoder();
-  bool isEncoderRunning() const { return isRunningV2; }
 };
 
 #endif

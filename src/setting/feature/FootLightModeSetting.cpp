@@ -39,10 +39,10 @@ void FootLightModeSetting::start()
  */
 void FootLightModeSetting::update()
 {
-  if (encoder.updateEncoder())
+  if (encoder.isUpdateEncoder())
   {
     // エンコーダの値が変わった場合
-    bool isOn = (encoder.currentEncoderValue == 1);
+    bool isOn = (encoder.getCurrentValue() == 1);
     const char *modeText = isOn ? "ON" : "OFF";
 
     display.print("Foot Light Mode", modeText);

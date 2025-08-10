@@ -21,10 +21,11 @@ FootLightVolumeSetting::FootLightVolumeSetting()
 }
 
 /**
- * 初期化処理
+ * 開始処理
  */
 void FootLightVolumeSetting::start()
 {
+  display.print("Foot Light Volume", "Adjusting...");
   int initialVolume = footLight.getVolume();
   encoder.startEncoder(
       initialVolume,
@@ -37,12 +38,12 @@ void FootLightVolumeSetting::start()
  */
 void FootLightVolumeSetting::update()
 {
-  if (encoder.updateEncoder())
+  if (encoder.isUpdateEncoder())
   {
     // エンコーダの値が変わった場合
     // TODO: 液晶一部分の書換にする
-    display.print("Foot Light Volume", String(encoder.currentEncoderValue).c_str());
-    footLight.setVolume(encoder.currentEncoderValue);
+    display.print("Foot Light Volume", String(encoder.getCurrentValue()).c_str());
+    footLight.setVolume(encoder.getCurrentValue());
   }
 
   if (button.isPushAwait(SELECT_SW_PIN))

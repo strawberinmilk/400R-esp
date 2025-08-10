@@ -3,10 +3,6 @@
 #include "config/pinConfig.h"
 #include "interface/encoder.h"
 
-volatile bool encoderEnabled = false;
-int currentEncoderValue = 0;
-int oldEncoderValue = 0;
-
 /**
  * コンストラクタ
  */
@@ -26,6 +22,14 @@ void Encoder::setCount(int value)
 }
 
 /**
+ * 現在のエンコーダーの値を取得
+ */
+int Encoder::getCurrentValue()
+{
+  return currentEncoderValue;
+}
+
+/**
  * エンコーダの値を更新
  * @param min 最小値
  * @param max 最大値
@@ -33,7 +37,7 @@ void Encoder::setCount(int value)
  */
 boolean Encoder::updateEncoder(int min, int max)
 {
-  if (!encoderEnabled)
+  if (!isRunning)
     return false; // 停止中は何もしない
 
   int count = esp32Encoder.getCount();
@@ -64,33 +68,30 @@ boolean Encoder::updateEncoder(int min, int max)
 void Encoder::startEncoder(int initialValue, int minValue, int maxValue)
 {
   // 既に実行中の場合は停止
-  if (isRunningV2)
+  if (isRunning)
   {
     stopEncoder();
   }
 
   // パラメータ設定
-  minValueV2 = minValue;
-  maxValueV2 = maxValue;
+  this->minValue = minValue;
+  this->maxValue = maxValue;
 
   // エンコーダー初期化
   setCount(initialValue);
-  encoderEnabled = true;
-  isRunningV2 = true;
-
-  Serial.println("Encoder V2 started");
+  isRunning = true;
 }
 
-bool Encoder::updateEncoder()
+bool Encoder::isUpdateEncoder()
 {
   // 実行中でない場合は何もしない
-  if (!isRunningV2)
+  if (!isRunning)
   {
     return false;
   }
 
   // エンコーダーの値が変わった場合
-  if (updateEncoder(minValueV2, maxValueV2))
+  if (updateEncoder(minValue, maxValue))
   {
     return true; // 値が変更された
   }
@@ -98,12 +99,13 @@ bool Encoder::updateEncoder()
   return false; // 値は変更されていない
 }
 
+/**
+ * エンコーダーを停止
+ */
 void Encoder::stopEncoder()
 {
-  if (isRunningV2)
+  if (isRunning)
   {
-    encoderEnabled = false;
-    isRunningV2 = false;
-    Serial.println("Encoder V2 stopped");
+    isRunning = false;
   }
 }
