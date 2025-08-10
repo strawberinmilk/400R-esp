@@ -5,12 +5,14 @@
 #include "config/pinConfig.h"
 #include "interface/button.h"
 #include "setting/manager.h"
+#include "setting/feature/standbyMode.h"
 
 extern Display display;
 extern FootLight footLight;
 extern Encoder encoder;
 extern Button button;
 extern SettingManager settingManager;
+extern StandbyMode standbyMode;
 
 /**
  * コンストラクタ
@@ -59,7 +61,7 @@ void FootLightVolumeSetting::cleanup()
 {
   display.print("Foot Light Volume", "success");
   encoder.stopEncoder();
-  settingManager.currentFeature = nullptr;
+  settingManager.currentFeature = &standbyMode;
   delay(500);
   display.print("standby", "");
 }

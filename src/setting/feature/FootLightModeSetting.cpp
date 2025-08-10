@@ -6,11 +6,14 @@
 #include "interface/button.h"
 #include "setting/manager.h"
 
+#include "setting/feature/standbyMode.h"
+
 extern Display display;
 extern FootLight footLight;
 extern Encoder encoder;
 extern Button button;
 extern SettingManager settingManager;
+extern StandbyMode standbyMode;
 
 /**
  * コンストラクタ
@@ -62,7 +65,7 @@ void FootLightModeSetting::cleanup()
 {
   display.print("Foot Light Mode", "success");
   encoder.stopEncoder();
-  settingManager.currentFeature = nullptr;
+  settingManager.currentFeature = &standbyMode;
   delay(500);
   display.print("standby", "");
 }

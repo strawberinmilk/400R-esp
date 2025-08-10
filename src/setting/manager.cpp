@@ -2,21 +2,23 @@
 #include "setting/feature/modeSelect.h"
 #include "setting/feature/footLightVolumeSetting.h"
 #include "setting/feature/footLightModeSetting.h"
+#include "setting/feature/StandbyMode.h"
 #include "interface/button.h"
 #include "config/pinConfig.h"
 
 ModeSelect modeSelect;
 FootLightVolumeSetting footLightVolumeSetting;
 FootLightModeSetting footLightModeSetting;
+StandbyMode standbyMode;
 extern Button button;
-
 
 /**
  * コンストラクタ
  */
 SettingManager::SettingManager()
 {
-  currentFeature = nullptr;
+  // 初期状態はstandbyモード
+  currentFeature = &standbyMode;
   int selectedMode = -1;
   bool modeSelected = false;
 }
@@ -29,14 +31,14 @@ void SettingManager::update()
   if (currentFeature)
   {
     currentFeature->update();
-  } else if (button.isPushAwait(SELECT_SW_PIN)) {
-    // モード選択を開始
+  }
+  else
+  {
+    // currentFeatureがnullptrの場合はモード選択を開始
     currentFeature = &modeSelect;
     modeSelected = true;
     selectedMode = 0; // modeSelectを起動
     modeSelect.start();
-  } else {
-    
   }
 }
 

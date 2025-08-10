@@ -5,6 +5,7 @@
 #include "config/pinConfig.h"
 #include "FootLightVolumeSetting.h"
 #include "FootLightModeSetting.h"
+#include "StandbyMode.h"
 #include "setting/manager.h"
 
 // mainで定義
@@ -15,6 +16,7 @@ extern Button button;
 // managerで定義
 extern FootLightVolumeSetting footLightVolumeSetting;
 extern FootLightModeSetting footLightModeSetting;
+extern StandbyMode standbyMode;
 extern SettingManager settingManager;
 
 ModeSelect::ModeSelect()
@@ -65,6 +67,11 @@ void ModeSelect::update()
     {
       // Foot Light Mode
       startFeature(footLightModeSetting);
+    }
+    else if (settingManager.selectedMode == 3)
+    {
+      // Standby Mode
+      startFeature(standbyMode);
     }
   }
 }
