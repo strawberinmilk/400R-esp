@@ -12,6 +12,7 @@ FootLight::FootLight()
 /**
  * 点灯/消灯処理
  */
+// TODO: 外部入力線からの割り込み受け付けるよう修正
 void FootLight::lighting()
 {
   // モードに基づいて点灯制御
@@ -20,11 +21,16 @@ void FootLight::lighting()
     ledcWrite(PWM_CH, 0);
     Serial.println("Foot Light OFF");
   }
-  else
+  else if (currentMode == MODE_ON)
   {
-    // MODE_ON, MODE_AUTO_SIDE_BRAKE, MODE_AUTO_ILLUMI（現在は全て常時点灯）
     ledcWrite(PWM_CH, VOLUME);
     Serial.println("Foot Light ON");
+  }
+  else
+  {
+    // TODO: イルミとサイドブレーキの実際の処理を実装
+    ledcWrite(PWM_CH, VOLUME);
+    Serial.println("Foot Light Auto");
   }
 }
 
