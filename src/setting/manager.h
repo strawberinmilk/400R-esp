@@ -3,18 +3,18 @@
 class SettingManager
 {
 private:
-
 public:
   SettingManager();
 
   void update();
   void saveSettings();
 
-  static constexpr int MODE_COUNT = 4;
+  static constexpr int MODE_COUNT = 5;
   const char *modeNames[MODE_COUNT] = {
       "Mode Select",
       "Foot Light Vol",
       "Foot Light Mode",
+      "Preset Manager",
       "Standby"};
   int selectedMode;
   bool modeSelected;

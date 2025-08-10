@@ -2,6 +2,7 @@
 #include "setting/feature/modeSelect.h"
 #include "setting/feature/footLightVolumeSetting.h"
 #include "setting/feature/footLightModeSetting.h"
+#include "setting/feature/PresetManager.h"
 #include "setting/feature/StandbyMode.h"
 #include "interface/button.h"
 #include "config/pinConfig.h"
@@ -9,6 +10,7 @@
 ModeSelect modeSelect;
 FootLightVolumeSetting footLightVolumeSetting;
 FootLightModeSetting footLightModeSetting;
+PresetManager presetManager;
 StandbyMode standbyMode;
 extern Button button;
 

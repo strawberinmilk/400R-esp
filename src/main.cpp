@@ -6,6 +6,7 @@
 #include "interface/encoder.h"
 #include "interface/display.h"
 #include "interface/button.h"
+#include "interface/nvStorage.h"
 // output
 #include "output/footLight.h"
 // feature
@@ -15,6 +16,7 @@
 Encoder encoder;
 Display display;
 Button button;
+NvStorage nvStorage;
 // output
 FootLight footLight;
 // feature
@@ -29,6 +31,7 @@ void setup()
   display.init();
   button.init(buttonPins);
   footLight.init();
+  nvStorage.init();
 
   display.print("SKYLINE RV37", "400R Welcome!");
 
