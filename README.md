@@ -18,19 +18,26 @@ Nissan Skyline RV37 400R 用の ESP32 ベース車載制御システム
 
 - **ESP32 DevKit V1** (ESP32-WROOM-32)
 
+### 電圧変換
+- **MYMGK00506ERSR使用 5V出力 最大6A 大電流DCDCコンバーターモジュールキット** 
+  - URL: https://akizukidenshi.com/catalog/g/g115108  
+  - 販売コード: 115108
+
 ### ディスプレイ
 
 - **ST7032 搭載 16x2 文字 I2C LCD**
   - データシート: `dataSheet/st7032.pdf`
   - リンク: https://akizukidenshi.com/catalog/g/g112486/
+  - 販売コード: 112486
 
 ### 入力デバイス
 
-- **ロータリーエンコーダー** (ESP32Encoder 対応)
+- **ロータリーエンコーダー** (24クリックタイプ)
   - リンク: https://akizukidenshi.com/catalog/g/g106357/
+  - 販売コード: 106357
 - **プッシュボタンスイッチ**
 
-### 出力制御
+### 出力デバイス
 
 - **フットライト** (PWM 制御)
   - 12V テープ LED(ピンク)
