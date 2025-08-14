@@ -7,6 +7,7 @@
 #include "interface/display.h"
 #include "interface/button.h"
 #include "interface/nvStorage.h"
+#include "interface/bleManager.h"
 // output
 #include "output/footLight.h"
 // feature
@@ -17,6 +18,7 @@ Encoder encoder;
 Display display;
 Button button;
 NvStorage nvStorage;
+BLEManager bleManager;
 // output
 FootLight footLight;
 // feature
@@ -32,6 +34,7 @@ void setup()
   button.init(buttonPins);
   footLight.init();
   nvStorage.init();
+  bleManager.init();
 
   display.print("SKYLINE RV37", "400R Welcome!");
 
@@ -41,4 +44,5 @@ void setup()
 void loop()
 {
   settingManager.update();
+  bleManager.update();
 }
