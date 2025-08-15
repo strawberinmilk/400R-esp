@@ -187,8 +187,13 @@ void BLEManager::handleFootLightVol(int value)
   }
 
   footLight.setVolume(value);
-  sendResponse("success", "Volume set to " + String(value));
-  sendStatusUpdate();
+  StaticJsonDocument<64> doc;
+  doc["exitCode"] = 0;
+  doc["message"] = "success vol:" + String(value);
+  String json;
+  serializeJson(doc, json);
+  pCharacteristic->setValue(json.c_str());
+  pCharacteristic->notify();
 
   Serial.printf("FootLight volume set to: %d\n", value);
 }
@@ -205,10 +210,15 @@ void BLEManager::handleFootLightMode(int value)
   }
 
   footLight.setMode((FootLightMode)value);
-  sendResponse("success", "Mode set to " + String(value));
-  sendStatusUpdate();
+  StaticJsonDocument<64> doc;
+  doc["exitCode"] = 0;
+  doc["message"] = String("success mode:") + FootLightModeTexts[value];
+  String json;
+  serializeJson(doc, json);
+  pCharacteristic->setValue(json.c_str());
+  pCharacteristic->notify();
 
-  Serial.printf("FootLight mode set to: %d\n", value);
+  Serial.printf("FootLight mode set to: %s\n", FootLightModeTexts[value]);
 }
 
 /**
@@ -316,7 +326,7 @@ void BLEManager::sendStatusUpdate()
     isMatched = (presetData.volume == footLight.getVolume() && presetData.mode == footLight.getMode());
   }
 
-  StaticJsonDocument<256> doc;
+  StaticJsonDocument<512> doc;
   doc["type"] = "status";
   JsonObject footLightObj = doc.createNestedObject("footLight");
   footLightObj["volume"] = footLight.getVolume();
@@ -326,6 +336,31 @@ void BLEManager::sendStatusUpdate()
   JsonObject presetObj = doc.createNestedObject("preset");
   presetObj["current"] = NvStorage::getPresetName(currentPreset);
   presetObj["isMatched"] = isMatched;
+
+  // --- constants ---
+  JsonObject constants = doc.createNestedObject("constants");
+  JsonObject flConst = constants.createNestedObject("footLight");
+  flConst["min"] = 0;
+  flConst["max"] = 255;
+
+  // モード値リスト
+  JsonArray modeValArr = flConst.createNestedArray("modeVal");
+  JsonArray modeNameArr = flConst.createNestedArray("modeName");
+  for (int i = 0; i < FOOTLIGHT_MODE_COUNT; ++i)
+  {
+    modeValArr.add(i);
+    modeNameArr.add(FootLightModeTexts[i]);
+  }
+
+  // プリセットリスト
+  JsonObject presetConst = constants.createNestedObject("preset");
+  JsonArray presetNameList = presetConst.createNestedArray("presetNameList");
+  JsonArray presetValueList = presetConst.createNestedArray("presetValueList");
+  for (int i = 0; i < PRESET_COUNT; ++i)
+  {
+    presetNameList.add(NvStorage::getPresetName(i));
+    presetValueList.add(i);
+  }
 
   String status;
   serializeJson(doc, status);
