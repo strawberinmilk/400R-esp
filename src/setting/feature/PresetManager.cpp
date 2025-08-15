@@ -1,4 +1,8 @@
+#include "interface/nvStorage.h"
+extern const int PRESET_INDEX_RIN;
+extern const int PRESET_COUNT;
 #include "PresetManager.h"
+#include "interface/nvStorage.h"
 #include "interface/display.h"
 #include "interface/encoder.h"
 #include "interface/button.h"
@@ -22,7 +26,7 @@ PresetManager::PresetManager()
 {
   name = "Preset Manager";
   currentState = MENU_SELECT_PRESET;
-  selectedPreset = NvStorage::PRESET_RIN;
+  selectedPreset = PRESET_INDEX_RIN;
   menuIndex = 0;
 }
 
@@ -97,14 +101,14 @@ void PresetManager::updateSelectPreset()
     case 0:
       currentState = MENU_LOAD_PRESET;
       selectedPreset = nvStorage.getCurrentPreset();
-      encoder.startEncoder((int)selectedPreset, 0, NvStorage::PRESET_COUNT - 1);
+      encoder.startEncoder(selectedPreset, 0, PRESET_COUNT - 1);
       display.print("Load Preset", NvStorage::getPresetName(selectedPreset));
       break;
 
     case 1:
       currentState = MENU_SAVE_PRESET;
       selectedPreset = nvStorage.getCurrentPreset();
-      encoder.startEncoder((int)selectedPreset, 0, NvStorage::PRESET_COUNT - 1);
+      encoder.startEncoder(selectedPreset, 0, PRESET_COUNT - 1);
       display.print("Save Preset", NvStorage::getPresetName(selectedPreset));
       break;
 
@@ -127,7 +131,7 @@ void PresetManager::updateSavePreset()
 {
   if (encoder.isUpdateEncoder())
   {
-    selectedPreset = (NvStorage::PresetName)encoder.getCurrentValue();
+    selectedPreset = encoder.getCurrentValue();
     display.print("Save Preset", NvStorage::getPresetName(selectedPreset));
   }
 
@@ -164,7 +168,7 @@ void PresetManager::updateLoadPreset()
 {
   if (encoder.isUpdateEncoder())
   {
-    selectedPreset = (NvStorage::PresetName)encoder.getCurrentValue();
+    selectedPreset = encoder.getCurrentValue();
     display.print("Load Preset", NvStorage::getPresetName(selectedPreset));
   }
 
@@ -214,7 +218,7 @@ void PresetManager::updateCurrentInfo()
  */
 void PresetManager::displayPresetInfo()
 {
-  NvStorage::PresetName current = nvStorage.getCurrentPreset();
+  int current = nvStorage.getCurrentPreset();
   FootLightPreset preset;
 
   if (nvStorage.loadPreset(current, preset))

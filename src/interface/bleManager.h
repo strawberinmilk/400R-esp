@@ -37,7 +37,7 @@ private:
 public:
   BLEManager();
   void init();
-  void update();
+  // void update();
   void processCommand(const String &command);
   void setConnected(bool connected);
   bool isConnected();

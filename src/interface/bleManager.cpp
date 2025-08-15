@@ -1,4 +1,8 @@
+#include "nvStorage.h"
+extern const int PRESET_COUNT;
+#include <ArduinoJson.h>
 #include "bleManager.h"
+#include "nvStorage.h"
 #include "output/footLight.h"
 #include "interface/nvStorage.h"
 
@@ -63,11 +67,11 @@ void BLEManager::init()
 /**
  * 更新処理
  */
-void BLEManager::update()
-{
-  // 現在はポーリング不要
-  // 必要に応じて定期的な状態送信などを実装
-}
+// void BLEManager::update()
+// {
+//   // 現在はポーリング不要
+//   // 必要に応じて定期的な状態送信などを実装
+// }
 
 /**
  * 接続状態設定
@@ -97,20 +101,31 @@ void BLEManager::notifyStatusChange()
 }
 
 /**
- * コマンドタイプ解析
+ * コマンドタイプ解析（マッピングテーブル方式）
  */
+struct CommandTypeMapEntry
+{
+  const char *modeName;
+  int modeValue;
+  BLECommandType type;
+};
+
+static const CommandTypeMapEntry commandTypeMap[] = {
+    {"footLightVol", 0, CMD_FOOT_LIGHT_VOL},
+    {"footLightMode", 1, CMD_FOOT_LIGHT_MODE},
+    {"presetLoad", 2, CMD_PRESET_LOAD},
+    {"presetSave", 3, CMD_PRESET_SAVE},
+    {"getStatus", 4, CMD_GET_STATUS}};
+
 BLECommandType BLEManager::parseCommandType(const String &mode)
 {
-  if (mode == "footLightVol" || mode == "0")
-    return CMD_FOOT_LIGHT_VOL;
-  if (mode == "footLightMode" || mode == "1")
-    return CMD_FOOT_LIGHT_MODE;
-  if (mode == "presetLoad" || mode == "2")
-    return CMD_PRESET_LOAD;
-  if (mode == "presetSave" || mode == "3")
-    return CMD_PRESET_SAVE;
-  if (mode == "getStatus" || mode == "4")
-    return CMD_GET_STATUS;
+  for (const auto &entry : commandTypeMap)
+  {
+    if (mode == entry.modeName || mode == String(entry.modeValue))
+    {
+      return entry.type;
+    }
+  }
   return CMD_UNKNOWN;
 }
 
@@ -121,29 +136,18 @@ void BLEManager::processCommand(const String &jsonString)
 {
   Serial.printf("Received BLE command: %s\n", jsonString.c_str());
 
-  // 簡易JSON解析（ArduinoJsonライブラリ無しで実装）
-  // 例: {"mode":"footLightVol","value":128}
-
-  int modeStart = jsonString.indexOf("\"mode\":\"") + 8;
-  int modeEnd = jsonString.indexOf("\"", modeStart);
-  String mode = jsonString.substring(modeStart, modeEnd);
-
-  int valueStart = jsonString.indexOf("\"value\":") + 8;
-  int valueEnd = jsonString.indexOf("}", valueStart);
-  if (valueEnd == -1)
-    valueEnd = jsonString.indexOf(",", valueStart);
-  String valueStr = jsonString.substring(valueStart, valueEnd);
-  int value = valueStr.toInt();
-
-  // presetName があるか確認
-  String presetName = "";
-  int presetStart = jsonString.indexOf("\"presetName\":\"");
-  if (presetStart != -1)
+  // ArduinoJsonライブラリによる解析
+  StaticJsonDocument<128> doc;
+  DeserializationError error = deserializeJson(doc, jsonString);
+  if (error)
   {
-    presetStart += 14;
-    int presetEnd = jsonString.indexOf("\"", presetStart);
-    presetName = jsonString.substring(presetStart, presetEnd);
+    sendResponse("error", "JSON parse error", false);
+    return;
   }
+
+  String mode = doc["mode"] | "";
+  int value = doc["value"] | 0;
+  String presetName = doc["presetName"] | "";
 
   // コマンド実行
   BLECommandType cmdType = parseCommandType(mode);
@@ -213,21 +217,9 @@ void BLEManager::handleFootLightMode(int value)
 void BLEManager::handlePresetLoad(const String &presetName)
 {
   // プリセット名からEnum値に変換
-  NvStorage::PresetName preset = NvStorage::PRESET_RIN; // デフォルト
+  int preset = NvStorage::presetNameFromString(presetName);
 
-  if (presetName == "rin")
-    preset = NvStorage::PRESET_RIN;
-  else if (presetName == "IonGrid")
-    preset = NvStorage::PRESET_IONGRID;
-  else if (presetName == "fuji")
-    preset = NvStorage::PRESET_FUJI;
-  else if (presetName == "masutate")
-    preset = NvStorage::PRESET_MASUTATE;
-  else if (presetName == "custom1")
-    preset = NvStorage::PRESET_CUSTOM1;
-  else if (presetName == "custom2")
-    preset = NvStorage::PRESET_CUSTOM2;
-  else
+  if (preset == PRESET_COUNT)
   {
     sendResponse("error", "Unknown preset: " + presetName, false);
     return;
@@ -256,21 +248,8 @@ void BLEManager::handlePresetLoad(const String &presetName)
 void BLEManager::handlePresetSave(const String &presetName)
 {
   // プリセット名からEnum値に変換
-  NvStorage::PresetName preset = NvStorage::PRESET_CUSTOM1; // デフォルト
-
-  if (presetName == "rin")
-    preset = NvStorage::PRESET_RIN;
-  else if (presetName == "IonGrid")
-    preset = NvStorage::PRESET_IONGRID;
-  else if (presetName == "fuji")
-    preset = NvStorage::PRESET_FUJI;
-  else if (presetName == "masutate")
-    preset = NvStorage::PRESET_MASUTATE;
-  else if (presetName == "custom1")
-    preset = NvStorage::PRESET_CUSTOM1;
-  else if (presetName == "custom2")
-    preset = NvStorage::PRESET_CUSTOM2;
-  else
+  int preset = NvStorage::presetNameFromString(presetName);
+  if (preset == PRESET_COUNT)
   {
     sendResponse("error", "Unknown preset: " + presetName, false);
     return;
@@ -306,7 +285,13 @@ void BLEManager::handleGetStatus()
  */
 void BLEManager::sendResponse(const String &type, const String &message, bool success)
 {
-  String response = "{\"type\":\"" + type + "\",\"message\":\"" + message + "\",\"success\":" + (success ? "true" : "false") + "}";
+  StaticJsonDocument<96> doc;
+  int exitCode = (type == "success") ? 0 : 1;
+  doc["exitCode"] = exitCode;
+  doc["message"] = message;
+
+  String response;
+  serializeJson(doc, response);
 
   if (deviceConnected && pCharacteristic)
   {
@@ -322,7 +307,7 @@ void BLEManager::sendResponse(const String &type, const String &message, bool su
  */
 void BLEManager::sendStatusUpdate()
 {
-  NvStorage::PresetName currentPreset = nvStorage.getCurrentPreset();
+  int currentPreset = nvStorage.getCurrentPreset();
   FootLightPreset presetData;
   bool isMatched = false;
 
@@ -331,16 +316,19 @@ void BLEManager::sendStatusUpdate()
     isMatched = (presetData.volume == footLight.getVolume() && presetData.mode == footLight.getMode());
   }
 
-  String status = "{\"type\":\"status\",";
-  status += "\"footLight\":{";
-  status += "\"volume\":" + String(footLight.getVolume()) + ",";
-  status += "\"mode\":" + String((int)footLight.getMode()) + ",";
-  status += "\"isLighting\":" + String(footLight.getMode() != MODE_OFF ? "true" : "false");
-  status += "},";
-  status += "\"preset\":{";
-  status += "\"current\":\"" + String(NvStorage::getPresetName(currentPreset)) + "\",";
-  status += "\"isMatched\":" + String(isMatched ? "true" : "false");
-  status += "}}";
+  StaticJsonDocument<256> doc;
+  doc["type"] = "status";
+  JsonObject footLightObj = doc.createNestedObject("footLight");
+  footLightObj["volume"] = footLight.getVolume();
+  footLightObj["mode"] = (int)footLight.getMode();
+  footLightObj["isLighting"] = (footLight.getMode() != MODE_OFF);
+
+  JsonObject presetObj = doc.createNestedObject("preset");
+  presetObj["current"] = NvStorage::getPresetName(currentPreset);
+  presetObj["isMatched"] = isMatched;
+
+  String status;
+  serializeJson(doc, status);
 
   if (deviceConnected && pCharacteristic)
   {
@@ -374,13 +362,13 @@ void CustomBLEServerCallbacks::onDisconnect(BLEServer *pServer)
 }
 
 /**
- * BLE特性書き込みコールバック
+ * BLEにアクセスがあった際のコールバック
  */
 void CustomBLECharacteristicCallbacks::onWrite(BLECharacteristic *pCharacteristic)
 {
   std::string value = pCharacteristic->getValue();
 
-  if (value.length() > 0)
+  if (0 < value.length())
   {
     String command = String(value.c_str());
     bleManager->processCommand(command);

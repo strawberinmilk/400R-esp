@@ -16,7 +16,7 @@ private:
   };
 
   MenuState currentState;
-  NvStorage::PresetName selectedPreset;
+  int selectedPreset;
   int menuIndex;
 
   void updateSelectPreset();

@@ -30,10 +30,10 @@ void setup()
 {
   Serial.begin(115200);
 
+  nvStorage.init();
   display.init();
   button.init(buttonPins);
   footLight.init();
-  nvStorage.init();
   bleManager.init();
 
   display.print("SKYLINE RV37", "400R Welcome!");
@@ -44,5 +44,5 @@ void setup()
 void loop()
 {
   settingManager.update();
-  bleManager.update();
+  // bleManager.update();
 }

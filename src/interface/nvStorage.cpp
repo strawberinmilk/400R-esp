@@ -1,21 +1,86 @@
 #include "nvStorage.h"
 
+// プリセット名とenum値の一元管理
+struct PresetNameMapEntry
+{
+  const char *name;
+};
+
+// プリセット名の管理
+static const PresetNameMapEntry presetNameMap[] = {
+    {"rin"},
+    {"fuji"},
+    {"masutate"},
+    {"IonGrid"},
+    {"custom1"},
+    {"custom2"}};
+
+const size_t presetNameMapSize = sizeof(presetNameMap) / sizeof(presetNameMap[0]);
+const int PRESET_COUNT = (int)presetNameMapSize;
+const int PRESET_INDEX_RIN = 0;
+String PRESET_KEYS[presetNameMapSize];
+
+// プリセット名をプリセット数値に変換
+int NvStorage::presetNameFromString(const String &name)
+{
+  for (size_t i = 0; i < presetNameMapSize; ++i)
+  {
+    if (name == presetNameMap[i].name)
+    {
+      return (int)i;
+    }
+  }
+  return (int)PRESET_COUNT;
+}
+
 // 定数定義
 const char *NvStorage::NAMESPACE = "footlight";
 const char *NvStorage::CURRENT_PRESET_KEY = "current";
-const char *NvStorage::PRESET_KEYS[] = {
-    "preset_rin",
-    "preset_iongrid",
-    "preset_fuji",
-    "preset_masutate",
-    "preset_custom1",
-    "preset_custom2"};
+
+// 動的プリセットキー生成
+__attribute__((constructor)) static void initPresetKeys()
+{
+  for (size_t i = 0; i < presetNameMapSize; ++i)
+  {
+    PRESET_KEYS[i] = "preset_" + String(presetNameMap[i].name);
+  }
+}
 
 /**
  * コンストラクタ
  */
 NvStorage::NvStorage()
 {
+  // デフォルトプリセットの設定（初回起動時）
+  if (!preferences.begin(NAMESPACE, true))
+  { // 読み取り専用でチェック
+    preferences.end();
+    preferences.begin(NAMESPACE, false); // 書き込み可能で開く
+
+    // デフォルト値の設定
+    FootLightPreset defaultPreset;
+    defaultPreset.volume = 128; // 中間の明るさ
+    defaultPreset.mode = MODE_ON;
+
+    // 全プリセットにデフォルト値を設定
+    for (int i = 0; i < PRESET_COUNT; i++)
+    {
+      FootLightPreset existing;
+      if (!loadPreset(i, existing))
+      {
+        savePreset(i, defaultPreset);
+      }
+    }
+
+    // 現在のプリセットをRINに設定
+    if (getCurrentPreset() == PRESET_COUNT)
+    { // 無効値の場合
+      setCurrentPreset(PRESET_INDEX_RIN);
+    }
+  }
+  preferences.end();
+
+  Serial.println("NvStorage initialized");
 }
 
 /**
@@ -38,16 +103,16 @@ void NvStorage::init()
     for (int i = 0; i < PRESET_COUNT; i++)
     {
       FootLightPreset existing;
-      if (!loadPreset((PresetName)i, existing))
+      if (!loadPreset(i, existing))
       {
-        savePreset((PresetName)i, defaultPreset);
+        savePreset(i, defaultPreset);
       }
     }
 
     // 現在のプリセットをRINに設定
     if (getCurrentPreset() == PRESET_COUNT)
     { // 無効値の場合
-      setCurrentPreset(PRESET_RIN);
+      setCurrentPreset(PRESET_INDEX_RIN);
     }
   }
   preferences.end();
@@ -58,7 +123,7 @@ void NvStorage::init()
 /**
  * プリセット保存
  */
-bool NvStorage::savePreset(PresetName preset, const FootLightPreset &data)
+bool NvStorage::savePreset(int preset, const FootLightPreset &data)
 {
   if (preset >= PRESET_COUNT)
     return false;
@@ -66,7 +131,7 @@ bool NvStorage::savePreset(PresetName preset, const FootLightPreset &data)
   preferences.begin(NAMESPACE, false);
 
   // 構造体をバイト配列として保存
-  size_t written = preferences.putBytes(PRESET_KEYS[preset], &data, sizeof(FootLightPreset));
+  size_t written = preferences.putBytes(PRESET_KEYS[preset].c_str(), &data, sizeof(FootLightPreset));
 
   preferences.end();
 
@@ -84,21 +149,21 @@ bool NvStorage::savePreset(PresetName preset, const FootLightPreset &data)
 /**
  * プリセット読み込み
  */
-bool NvStorage::loadPreset(PresetName preset, FootLightPreset &data)
+bool NvStorage::loadPreset(int preset, FootLightPreset &data)
 {
   if (preset >= PRESET_COUNT)
     return false;
 
   preferences.begin(NAMESPACE, true); // 読み取り専用
 
-  size_t dataSize = preferences.getBytesLength(PRESET_KEYS[preset]);
+  size_t dataSize = preferences.getBytesLength(PRESET_KEYS[preset].c_str());
   if (dataSize != sizeof(FootLightPreset))
   {
     preferences.end();
     return false;
   }
 
-  size_t read = preferences.getBytes(PRESET_KEYS[preset], &data, sizeof(FootLightPreset));
+  size_t read = preferences.getBytes(PRESET_KEYS[preset].c_str(), &data, sizeof(FootLightPreset));
   preferences.end();
 
   if (read == sizeof(FootLightPreset))
@@ -114,7 +179,7 @@ bool NvStorage::loadPreset(PresetName preset, FootLightPreset &data)
 /**
  * 現在のプリセット設定
  */
-bool NvStorage::setCurrentPreset(PresetName preset)
+bool NvStorage::setCurrentPreset(int preset)
 {
   if (preset >= PRESET_COUNT)
     return false;
@@ -135,7 +200,7 @@ bool NvStorage::setCurrentPreset(PresetName preset)
 /**
  * 現在のプリセット取得
  */
-NvStorage::PresetName NvStorage::getCurrentPreset()
+int NvStorage::getCurrentPreset()
 {
   preferences.begin(NAMESPACE, true);                                       // 読み取り専用
   uint8_t current = preferences.getUChar(CURRENT_PRESET_KEY, PRESET_COUNT); // デフォルトは無効値
@@ -143,34 +208,22 @@ NvStorage::PresetName NvStorage::getCurrentPreset()
 
   if (current < PRESET_COUNT)
   {
-    return (PresetName)current;
+    return (int)current;
   }
 
-  return (PresetName)PRESET_COUNT; // 無効値を返す
+  return (int)PRESET_COUNT; // 無効値を返す
 }
 
 /**
  * プリセット名取得
  */
-const char *NvStorage::getPresetName(PresetName preset)
+const char *NvStorage::getPresetName(int preset)
 {
-  switch (preset)
+  if (preset >= 0 && preset < (int)presetNameMapSize)
   {
-  case PRESET_RIN:
-    return "rin";
-  case PRESET_IONGRID:
-    return "IonGrid";
-  case PRESET_FUJI:
-    return "fuji";
-  case PRESET_MASUTATE:
-    return "masutate";
-  case PRESET_CUSTOM1:
-    return "custom1";
-  case PRESET_CUSTOM2:
-    return "custom2";
-  default:
-    return "Unknown";
+    return presetNameMap[preset].name;
   }
+  return "Unknown";
 }
 
 /**
