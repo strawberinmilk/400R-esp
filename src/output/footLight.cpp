@@ -40,7 +40,7 @@ void FootLight::lighting()
 void FootLight::init()
 {
   pinMode(FOOTLIGHT_PIN, OUTPUT);
-  ledcSetup(PWM_CH, 7812.5, 8); // 7812.5Hz, 8Bit(256段階)
+  ledcSetup(PWM_CH, 120, 8); // 120Hz, 8Bit(256段階)
   ledcAttachPin(FOOTLIGHT_PIN, PWM_CH);
   lighting();
 }

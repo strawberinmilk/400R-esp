@@ -26,9 +26,9 @@ Nissan Skyline RV37 400R 用の ESP32 ベース車載制御システム
 ### ディスプレイ
 
 - **ST7032 搭載 16x2 文字 I2C LCD**
-  - データシート: `dataSheet/st7032.pdf`
   - リンク: https://akizukidenshi.com/catalog/g/g112486/
   - 販売コード: 112486
+  - データシート: `dataSheet/st7032.pdf` (著作権都合でリポジトリには含まず)
 
 ### 入力デバイス
 
@@ -36,6 +36,9 @@ Nissan Skyline RV37 400R 用の ESP32 ベース車載制御システム
   - リンク: https://akizukidenshi.com/catalog/g/g106357/
   - 販売コード: 106357
 - **プッシュボタンスイッチ**
+  - リンク: https://akizukidenshi.com/catalog/g/g104583/
+  - 販売コード: 104583
+  - 2個、色は任意(上記データは白)
 
 ### 出力デバイス
 
@@ -44,7 +47,7 @@ Nissan Skyline RV37 400R 用の ESP32 ベース車載制御システム
 
 ## 🏗️ ソフトウェア構成
 
-### アーキテクチャ
+### アーキテクチャ ※AI生成
 
 ```
 src/
@@ -67,12 +70,6 @@ src/
         └── footLightVolumeSetting.h/.cpp
 ```
 
-### 設計パターン
-
-- **継承ベースの設計**: `BaseSetting`抽象クラスによる統一インターフェース
-- **状態管理パターン**: `SettingManager`による機能切り替え
-- **ハードウェア抽象化**: インターフェース層によるハードウェア依存の分離
-
 ## 🔧 開発環境
 
 ### 必要なソフトウェア
@@ -80,7 +77,7 @@ src/
 - [PlatformIO IDE](https://platformio.org/platformio-ide) または [PlatformIO CLI](https://platformio.org/install/cli)
 - [VS Code](https://code.visualstudio.com/) (推奨)
 
-### 依存ライブラリ
+### 依存ライブラリ ※AI生成
 
 ```ini
 lib_deps =
@@ -126,6 +123,9 @@ platformio device monitor --baud 115200
 3. **決定**: SELECT_SW ボタンで選択実行
 4. **戻る**: 各機能から SELECT_SW ボタンでスタンバイモードに戻る
 
+BLE通信でブラウザから操作も可能
+TODO: リンクを追加
+
 ### 機能一覧
 
 #### 🔦 フットライト制御
@@ -165,12 +165,9 @@ public:
 
 ## 📈 今後の拡張予定
 
-- [ ] 設定の不揮発性メモリ保存 (EEPROM/SPIFFS)
-- [ ] OTA (Over-The-Air) 更新機能
-- [ ] CAN 通信対応
+- [x] 設定の不揮発性メモリ保存 (EEPROM/SPIFFS)
 - [ ] 追加センサー対応 (温度、電圧監視等)
-- [ ] スマートフォン連携 (Bluetooth/Wi-Fi)
-- [ ] ログ機能とデータ解析
+- [x] スマートフォン連携 (Bluetooth/Wi-Fi)
 
 ## 🔒 安全性について
 
@@ -183,30 +180,118 @@ public:
 - 車両の基本安全システムに影響しない配線を行う
 - 定期的な動作確認とメンテナンスを実施する
 
-## 🐛 トラブルシューティング
-
-### よくある問題
-
-**Q: LCD が表示されない**
-A: I2C 接続を確認。SDA/SCL ピンとプルアップ抵抗をチェック
-
-**Q: エンコーダーが反応しない**
-A: エンコーダーのピン接続とチャタリング除去回路を確認
-
-**Q: ビルドエラーが発生する**
-A: PlatformIO の依存ライブラリを最新版に更新
-
-```bash
-platformio lib update
-```
-
 ## 📄 ライセンス
 
 このプロジェクトは [MIT License](LICENSE) の下で公開されています。
 
-## 🤝 コントリビューション
+# BLE通信仕様まとめ
 
-プルリクエストやイシューの報告を歓迎します！
+## 機能概要
+
+BLE通信で、フットライトの明度・モード変更、プリセットの保存・読込、状態取得などを行います。  
+通信はJSONコマンドで行い、応答もJSON形式です。
+
+---
+
+## リクエスト仕様（request）
+
+BLEクライアントは、以下のJSON形式でコマンドを送信します。
+
+### 1. 明度変更
+
+```json
+{
+  "mode": "footLightVol",
+  "value": 0 // 0～255
+}
+```
+
+### 2. モード変更
+
+```json
+{
+  "mode": "footLightMode",
+  "value": 0 // モード番号
+}
+```
+
+### 3. プリセット読込
+
+```json
+{
+  "mode": "presetLoad",
+  "presetName": "プリセット名"
+}
+```
+
+### 4. プリセット保存
+
+```json
+{
+  "mode": "presetSave",
+  "presetName": "プリセット名"
+}
+```
+
+### 5. 状態取得
+
+```json
+{
+  "mode": "getStatus"
+}
+```
+
+---
+
+## レスポンス仕様（response）
+
+BLEサーバーは、コマンドごとに以下のJSON形式で応答します。
+
+### 1. 共通レスポンス（成功/失敗）
+
+```json
+{
+  "exitCode": 0, // 成功時は0、失敗時は1
+  "message": "結果メッセージ"
+}
+```
+
+### 2. 状態通知（getStatus, 各種操作後の自動通知）
+
+```json
+{
+  "type": "status",
+  "footLight": {
+    "volume": 0,         // 現在の明度
+    "mode": 0,           // 現在のモード番号
+    "isLighting": true   // 点灯中か
+  },
+  "preset": {
+    "current": "プリセット名", // 現在のプリセット名
+    "isMatched": true         // 現在状態とプリセットが一致しているか
+  },
+  "constants": {
+    "footLight": {
+      "min": 0,
+      "max": 255,
+      "modeVal": [0, 1, ...],      // モード番号リスト
+      "modeName": ["名1", "名2", ...] // モード名リスト
+    },
+    "preset": {
+      "presetNameList": ["名1", ...], // プリセット名リスト
+      "presetValueList": [0, 1, ...] // プリセット番号リスト
+    }
+  }
+}
+```
+
+---
+
+## 備考
+
+- コマンド種別は `mode` で判別します。
+- エラー時は `"exitCode": 1` とエラーメッセージを返します。
+- 状態変更時やgetStatus時は詳細な状態JSONを通知します。
 
 ### 開発ガイドライン
 
@@ -217,12 +302,12 @@ platformio lib update
 
 ## 📞 サポート
 
-質問やサポートが必要な場合は、[Issues](https://github.com/strawberinmilk/400R-esp/issues) でお気軽にお問い合わせください。
+質問やサポートが必要な場合は、[Issues](https://github.com/strawberinmilk/400R-esp/issues) 又は[Twitter](https://x.com/strawberinmilk)でお気軽にお問い合わせください。
 
 ---
 
 **Project Status**: ✅ Active Development  
-**Last Updated**: 2025 年 8 月 10 日  
+**Last Updated**: 2025 年 8 月 17 日  
 **Version**: 1.0.0
 
-Made with ❤️ for RV37 400R owners
+Made with rin;
