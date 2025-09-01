@@ -8,6 +8,8 @@
 #include "interface/button.h"
 #include "interface/nvStorage.h"
 #include "interface/bleManager.h"
+// carInput
+#include "interface/carInput/illumi.h"
 // output
 #include "output/footLight.h"
 // feature
@@ -19,6 +21,8 @@ Display display;
 Button button;
 NvStorage nvStorage;
 BLEManager bleManager;
+// carInput
+Illumi illumi;
 // output
 FootLight footLight;
 // feature
@@ -35,14 +39,14 @@ void setup()
   button.init(buttonPins);
   footLight.init();
   bleManager.init();
+  illumi.init();
 
   display.print("SKYLINE RV37", "400R Welcome!");
-
   delay(1000);
 }
 
 void loop()
 {
   settingManager.update();
-  // bleManager.update();
+  illumi.update();
 }

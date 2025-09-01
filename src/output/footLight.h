@@ -27,7 +27,6 @@ class FootLight
 private:
   int VOLUME;
   FootLightMode currentMode;
-  void lighting();
 
 public:
   FootLight();
@@ -36,8 +35,9 @@ public:
   void setMode(FootLightMode mode);
   int getVolume();
   FootLightMode getMode();
-  static int getModeCount();                          // FootLightModeの要素数を取得
-  static const char *getModeText(FootLightMode mode); // モードに対応するテキストを取得
+  void lighting();
+  static int getModeCount();
+  static const char *getModeText(FootLightMode mode);
 };
 
 #endif

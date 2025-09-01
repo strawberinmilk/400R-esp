@@ -86,6 +86,10 @@ NvStorage::NvStorage()
 /**
  * 初期化処理
  */
+// フットライトの現在プリセットを起動時に反映
+#include "output/footLight.h"
+extern FootLight footLight;
+
 void NvStorage::init()
 {
   // デフォルトプリセットの設定（初回起動時）
@@ -117,7 +121,14 @@ void NvStorage::init()
   }
   preferences.end();
 
-  Serial.println("NvStorage initialized");
+  // 起動時にcurrentPresetをfootLightへ反映
+  int current = getCurrentPreset();
+  FootLightPreset preset;
+  if (loadPreset(current, preset))
+  {
+    footLight.setVolume(preset.volume);
+    footLight.setMode(preset.mode);
+  }
 }
 
 /**
@@ -142,7 +153,6 @@ bool NvStorage::savePreset(int preset, const FootLightPreset &data)
     return true;
   }
 
-  Serial.printf("Failed to save preset %s\n", getPresetName(preset));
   return false;
 }
 
@@ -190,7 +200,6 @@ bool NvStorage::setCurrentPreset(int preset)
 
   if (written > 0)
   {
-    Serial.printf("Current preset set to: %s\n", getPresetName(preset));
     return true;
   }
 

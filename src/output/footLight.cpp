@@ -1,6 +1,9 @@
 #include <Arduino.h>
 #include "footLight.h"
 #include "config/pinConfig.h"
+#include "interface/carInput/illumi.h"
+
+extern Illumi illumi;
 
 FootLight::FootLight()
 {
@@ -12,25 +15,36 @@ FootLight::FootLight()
 /**
  * 点灯/消灯処理
  */
-// TODO: 外部入力線からの割り込み受け付けるよう修正
 void FootLight::lighting()
 {
   // モードに基づいて点灯制御
   if (currentMode == MODE_OFF)
   {
-    ledcWrite(PWM_CH, 255); // 255で消灯
-    Serial.println("Foot Light OFF");
+    ledcWrite(PWM_CH, 0);
   }
   else if (currentMode == MODE_ON)
   {
-    ledcWrite(PWM_CH, 255 - VOLUME); // 0で全点灯、255で消灯
-    Serial.println("Foot Light ON");
+    ledcWrite(PWM_CH, VOLUME);
   }
-  else
+  else if (currentMode == MODE_AUTO_ILLUMI)
   {
-    // TODO: イルミとサイドブレーキの実際の処理を実装
-    ledcWrite(PWM_CH, 255 - VOLUME);
-    Serial.println("Foot Light Auto");
+    if (illumi.getIllumiState())
+    {
+      // ライトON - フットライトOFF
+      ledcWrite(PWM_CH, 0);
+      Serial.println("Foot Light Auto Illumi ON");
+    }
+    else
+    {
+      // ライトOFF - フットライトON
+      ledcWrite(PWM_CH, VOLUME);
+      Serial.println("Foot Light Auto Illumi OFF");
+    }
+  }
+  else if (currentMode == MODE_AUTO_SIDE_BRAKE)
+  {
+    ledcWrite(PWM_CH, VOLUME);
+    Serial.println("TODO: side brake");
   }
 }
 
