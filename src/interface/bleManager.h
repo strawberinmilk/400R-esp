@@ -20,6 +20,8 @@ enum BLECommandType
   CMD_PRESET_LOAD = 2,
   CMD_PRESET_SAVE = 3,
   CMD_GET_STATUS = 4,
+  CMD_HEART_LIGHT_VOL = 5,
+  CMD_HEART_LIGHT_MODE = 6,
   CMD_UNKNOWN = 99
 };
 
@@ -48,6 +50,8 @@ private:
   BLECommandType parseCommandType(const String &mode);
   void handleFootLightVol(int value);
   void handleFootLightMode(int value);
+  void handleHeartLightVol(int value);
+  void handleHeartLightMode(int value);
   void handlePresetLoad(const String &presetName);
   void handlePresetSave(const String &presetName);
   void handleGetStatus();

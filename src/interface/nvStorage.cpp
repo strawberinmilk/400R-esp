@@ -87,7 +87,7 @@ NvStorage::NvStorage()
  * 初期化処理
  */
 // フットライトの現在プリセットを起動時に反映
-#include "output/footLight.h"
+#include "output/PwmLeds/footLight.h"
 extern FootLight footLight;
 
 void NvStorage::init()

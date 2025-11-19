@@ -3,11 +3,13 @@ extern const int PRESET_COUNT;
 #include <ArduinoJson.h>
 #include "bleManager.h"
 #include "nvStorage.h"
-#include "output/footLight.h"
+#include "output/PwmLeds/footLight.h"
+#include "output/PwmLeds/heartLight.h"
 #include "interface/nvStorage.h"
 
 // 外部参照
 extern FootLight footLight;
+extern HeartLight heartLight;
 extern NvStorage nvStorage;
 
 /**
@@ -115,7 +117,9 @@ static const CommandTypeMapEntry commandTypeMap[] = {
     {"footLightMode", 1, CMD_FOOT_LIGHT_MODE},
     {"presetLoad", 2, CMD_PRESET_LOAD},
     {"presetSave", 3, CMD_PRESET_SAVE},
-    {"getStatus", 4, CMD_GET_STATUS}};
+    {"getStatus", 4, CMD_GET_STATUS},
+    {"heartLightVol", 5, CMD_HEART_LIGHT_VOL},
+    {"heartLightMode", 6, CMD_HEART_LIGHT_MODE}};
 
 BLECommandType BLEManager::parseCommandType(const String &mode)
 {
@@ -169,6 +173,12 @@ void BLEManager::processCommand(const String &jsonString)
   case CMD_GET_STATUS:
     handleGetStatus();
     break;
+  case CMD_HEART_LIGHT_VOL:
+    handleHeartLightVol(value);
+    break;
+  case CMD_HEART_LIGHT_MODE:
+    handleHeartLightMode(value);
+    break;
   default:
     sendResponse("error", "Unknown command: " + mode, false);
     break;
@@ -219,6 +229,52 @@ void BLEManager::handleFootLightMode(int value)
   pCharacteristic->notify();
 
   Serial.printf("FootLight mode set to: %s\n", FootLightModeTexts[value]);
+}
+
+/**
+ * ハートライト明度変更
+ */
+void BLEManager::handleHeartLightVol(int value)
+{
+  if (value < 0 || value > 255)
+  {
+    sendResponse("error", "Volume value out of range (0-255)", false);
+    return;
+  }
+
+  heartLight.setVolume(value);
+  StaticJsonDocument<64> doc;
+  doc["exitCode"] = 0;
+  doc["message"] = "success vol:" + String(value);
+  String json;
+  serializeJson(doc, json);
+  pCharacteristic->setValue(json.c_str());
+  pCharacteristic->notify();
+
+  Serial.printf("HeartLight volume set to: %d\n", value);
+}
+
+/**
+ * ハートライトモード変更
+ */
+void BLEManager::handleHeartLightMode(int value)
+{
+  if (value < 0 || value >= HeartLight::getModeCount())
+  {
+    sendResponse("error", "Mode value out of range", false);
+    return;
+  }
+
+  heartLight.setMode((HeartLightMode)value);
+  StaticJsonDocument<64> doc;
+  doc["exitCode"] = 0;
+  doc["message"] = String("success mode:") + HeartLightModeTexts[value];
+  String json;
+  serializeJson(doc, json);
+  pCharacteristic->setValue(json.c_str());
+  pCharacteristic->notify();
+
+  Serial.printf("HeartLight mode set to: %s\n", HeartLightModeTexts[value]);
 }
 
 /**
@@ -333,6 +389,11 @@ void BLEManager::sendStatusUpdate()
   footLightObj["mode"] = (int)footLight.getMode();
   footLightObj["isLighting"] = (footLight.getMode() != MODE_OFF);
 
+  JsonObject heartLightObj = doc.createNestedObject("heartLight");
+  heartLightObj["volume"] = heartLight.getVolume();
+  heartLightObj["mode"] = (int)heartLight.getMode();
+  heartLightObj["isLighting"] = (heartLight.getMode() != MODE_OFF);
+
   JsonObject presetObj = doc.createNestedObject("preset");
   presetObj["current"] = NvStorage::getPresetName(currentPreset);
   presetObj["isMatched"] = isMatched;
@@ -350,6 +411,19 @@ void BLEManager::sendStatusUpdate()
   {
     modeValArr.add(i);
     modeNameArr.add(FootLightModeTexts[i]);
+  }
+
+  JsonObject hlConst = constants.createNestedObject("heartLight");
+  hlConst["min"] = 0;
+  hlConst["max"] = 255;
+
+  // モード値リスト
+  JsonArray hlModeValArr = hlConst.createNestedArray("modeVal");
+  JsonArray hlModeNameArr = hlConst.createNestedArray("modeName");
+  for (int i = 0; i < HEARTLIGHT_MODE_COUNT; ++i)
+  {
+    hlModeValArr.add(i);
+    hlModeNameArr.add(HeartLightModeTexts[i]);
   }
 
   // プリセットリスト

@@ -4,7 +4,7 @@
 
 #include <Arduino.h>
 #include <Preferences.h>
-#include "output/footLight.h"
+#include "output/PwmLeds/footLight.h"
 
 // グローバルプリセット情報
 extern const int PRESET_COUNT;

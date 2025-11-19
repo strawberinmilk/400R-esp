@@ -7,7 +7,7 @@ extern const int PRESET_COUNT;
 #include "interface/encoder.h"
 #include "interface/button.h"
 #include "config/pinConfig.h"
-#include "output/footLight.h"
+#include "output/PwmLeds/footLight.h"
 #include "setting/manager.h"
 #include "setting/feature/standbyMode.h"
 

@@ -1,5 +1,5 @@
 #include "FootLightVolumeSetting.h"
-#include "output/footLight.h"
+#include "output/PwmLeds/footLight.h"
 #include "interface/display.h"
 #include "interface/encoder.h"
 #include "config/pinConfig.h"
