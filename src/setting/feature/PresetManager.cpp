@@ -8,6 +8,7 @@ extern const int PRESET_COUNT;
 #include "interface/button.h"
 #include "config/pinConfig.h"
 #include "output/PwmLeds/footLight.h"
+#include "output/PwmLeds/heartLight.h"
 #include "setting/manager.h"
 #include "setting/feature/standbyMode.h"
 
@@ -15,6 +16,7 @@ extern Display display;
 extern Encoder encoder;
 extern Button button;
 extern FootLight footLight;
+extern HeartLight heartLight;
 extern SettingManager settingManager;
 extern StandbyMode standbyMode;
 extern NvStorage nvStorage;
@@ -39,10 +41,8 @@ void PresetManager::start()
   selectedPreset = nvStorage.getCurrentPreset();
   menuIndex = 0;
 
-  encoder.startEncoder(0, 0, 3); // 4つのメニュー項目 (0-3)
+  encoder.startEncoder(0, 0, 4); // 5つのメニュー項目 (0-4)
   display.print("Preset Manager", "Select Menu");
-
-  Serial.println("PresetManager started");
 }
 
 /**
@@ -64,14 +64,18 @@ void PresetManager::update()
   case MENU_CURRENT_INFO:
     updateCurrentInfo();
     break;
+  case MENU_CLEAR_ALL:
+    updateClearAll();
+    break;
   }
 }
 
 /**
- * プリセット選択メニュー更新
+ * メニュー選択
  */
 void PresetManager::updateSelectPreset()
 {
+  // エンコーダ操作で画面更新
   if (encoder.isUpdateEncoder())
   {
     menuIndex = encoder.getCurrentValue();
@@ -88,7 +92,10 @@ void PresetManager::updateSelectPreset()
       display.print("Preset Manager", "3.Current Info");
       break;
     case 3:
-      display.print("Preset Manager", "4.Exit");
+      display.print("Preset Manager", "4.Clear All");
+      break;
+    case 4:
+      display.print("Preset Manager", "5.Exit");
       break;
     }
   }
@@ -118,6 +125,11 @@ void PresetManager::updateSelectPreset()
       break;
 
     case 3:
+      currentState = MENU_CLEAR_ALL;
+      display.print("Clear All?", "Press to confirm");
+      break;
+
+    case 4:
       this->cleanup();
       break;
     }
@@ -125,7 +137,7 @@ void PresetManager::updateSelectPreset()
 }
 
 /**
- * プリセット保存メニュー更新
+ * プリセット内容保存
  */
 void PresetManager::updateSavePreset()
 {
@@ -137,12 +149,14 @@ void PresetManager::updateSavePreset()
 
   if (button.isPushAwait(SELECT_SW_PIN))
   {
-    // 現在のフットライト設定を保存
-    FootLightPreset preset;
-    preset.volume = footLight.getVolume();
-    preset.mode = footLight.getMode();
+    // 統合プリセットとして保存
+    CombinedPreset preset;
+    preset.footLight.volume = footLight.getVolume();
+    preset.footLight.mode = footLight.getMode();
+    preset.heartLight.volume = heartLight.getVolume();
+    preset.heartLight.mode = heartLight.getMode();
 
-    if (nvStorage.savePreset(selectedPreset, preset))
+    if (nvStorage.saveCombinedPreset(selectedPreset, preset))
     {
       nvStorage.setCurrentPreset(selectedPreset);
       display.print("Save Complete", NvStorage::getPresetName(selectedPreset));
@@ -156,13 +170,13 @@ void PresetManager::updateSavePreset()
 
     // メインメニューに戻る
     currentState = MENU_SELECT_PRESET;
-    encoder.startEncoder(menuIndex, 0, 3);
+    encoder.startEncoder(menuIndex, 0, 4);
     display.print("Preset Manager", "Select Menu");
   }
 }
 
 /**
- * プリセット読み込みメニュー更新
+ * プリセット内容を読み出し、LEDに適用
  */
 void PresetManager::updateLoadPreset()
 {
@@ -174,13 +188,15 @@ void PresetManager::updateLoadPreset()
 
   if (button.isPushAwait(SELECT_SW_PIN))
   {
-    FootLightPreset preset;
+    CombinedPreset preset;
 
-    if (nvStorage.loadPreset(selectedPreset, preset))
+    if (nvStorage.loadCombinedPreset(selectedPreset, preset))
     {
-      // フットライトに設定を適用
-      footLight.setVolume(preset.volume);
-      footLight.setMode(preset.mode);
+      // 両方のLEDに設定を適用
+      footLight.setVolume(preset.footLight.volume);
+      footLight.setMode(preset.footLight.mode);
+      heartLight.setVolume(preset.heartLight.volume);
+      heartLight.setMode(preset.heartLight.mode);
       nvStorage.setCurrentPreset(selectedPreset);
 
       display.print("Load Complete", NvStorage::getPresetName(selectedPreset));
@@ -194,13 +210,13 @@ void PresetManager::updateLoadPreset()
 
     // メインメニューに戻る
     currentState = MENU_SELECT_PRESET;
-    encoder.startEncoder(menuIndex, 0, 3);
+    encoder.startEncoder(menuIndex, 0, 4);
     display.print("Preset Manager", "Select Menu");
   }
 }
 
 /**
- * 現在の情報表示更新
+ * 現在の情報表示
  */
 void PresetManager::updateCurrentInfo()
 {
@@ -208,7 +224,26 @@ void PresetManager::updateCurrentInfo()
   if (button.isPushAwait(SELECT_SW_PIN))
   {
     currentState = MENU_SELECT_PRESET;
-    encoder.startEncoder(menuIndex, 0, 3);
+    encoder.startEncoder(menuIndex, 0, 4);
+    display.print("Preset Manager", "Select Menu");
+  }
+}
+
+/**
+ * 全プリセット消去
+ */
+void PresetManager::updateClearAll()
+{
+  // SELECT_SWボタンで消去実行
+  if (button.isPushAwait(SELECT_SW_PIN))
+  {
+    nvStorage.clearAll();
+    display.print("Clear Complete", "All data erased");
+    delay(1500);
+
+    // メインメニューに戻る
+    currentState = MENU_SELECT_PRESET;
+    encoder.startEncoder(menuIndex, 0, 4);
     display.print("Preset Manager", "Select Menu");
   }
 }
@@ -219,30 +254,34 @@ void PresetManager::updateCurrentInfo()
 void PresetManager::displayPresetInfo()
 {
   int current = nvStorage.getCurrentPreset();
-  FootLightPreset preset;
+  CombinedPreset preset;
 
-  if (nvStorage.loadPreset(current, preset))
+  if (nvStorage.loadCombinedPreset(current, preset))
   {
-    // 現在のfootLightの設定を取得
-    int currentVolume = footLight.getVolume();
-    FootLightMode currentMode = footLight.getMode();
+    // 現在の設定を取得
+    int footVol = footLight.getVolume();
+    LedMode footMode = footLight.getMode();
+    int heartVol = heartLight.getVolume();
+    LedMode heartMode = heartLight.getMode();
 
-    // プリセットとfootLightの設定を比較
-    bool isMatched = (preset.volume == currentVolume && preset.mode == currentMode);
+    // プリセットと現在の設定を比較
+    bool isFootMatched = (preset.footLight.volume == footVol && preset.footLight.mode == footMode);
+    bool isHeartMatched = (preset.heartLight.volume == heartVol && preset.heartLight.mode == heartMode);
+    bool isMatched = isFootMatched && isHeartMatched;
 
     char line1[17], line2[17];
 
     if (isMatched)
     {
       // 一致している場合、プリセット名を表示
-      snprintf(line1, sizeof(line1), "Preset: %s", NvStorage::getPresetName(current));
-      snprintf(line2, sizeof(line2), "Vol:%d Mode:%d", preset.volume, (int)preset.mode);
+      snprintf(line1, sizeof(line1), "PS:%s F:%d H:%d", NvStorage::getPresetName(current), preset.footLight.volume, preset.heartLight.volume);
+      snprintf(line2, sizeof(line2), "Fm:%d Hm:%d", (int)preset.footLight.mode, (int)preset.heartLight.mode);
     }
     else
     {
       // 一致していない場合、「not preset」を表示
-      snprintf(line1, sizeof(line1), "Preset: not preset");
-      snprintf(line2, sizeof(line2), "Vol:%d Mode:%d", currentVolume, (int)currentMode);
+      snprintf(line1, sizeof(line1), "NOT Preset");
+      snprintf(line2, sizeof(line2), "F:%d/%d H:%d/%d", footVol, (int)footMode, heartVol, (int)heartMode);
     }
 
     display.print(line1, line2);

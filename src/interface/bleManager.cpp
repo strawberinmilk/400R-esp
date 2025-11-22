@@ -291,11 +291,13 @@ void BLEManager::handlePresetLoad(const String &presetName)
     return;
   }
 
-  FootLightPreset data;
-  if (nvStorage.loadPreset(preset, data))
+  CombinedPreset data;
+  if (nvStorage.loadCombinedPreset(preset, data))
   {
-    footLight.setVolume(data.volume);
-    footLight.setMode(data.mode);
+    footLight.setVolume(data.footLight.volume);
+    footLight.setMode(data.footLight.mode);
+    heartLight.setVolume(data.heartLight.volume);
+    heartLight.setMode(data.heartLight.mode);
     nvStorage.setCurrentPreset(preset);
 
     sendResponse("success", "Preset loaded: " + presetName);
@@ -321,11 +323,13 @@ void BLEManager::handlePresetSave(const String &presetName)
     return;
   }
 
-  FootLightPreset data;
-  data.volume = footLight.getVolume();
-  data.mode = footLight.getMode();
+  CombinedPreset data;
+  data.footLight.volume = footLight.getVolume();
+  data.footLight.mode = footLight.getMode();
+  data.heartLight.volume = heartLight.getVolume();
+  data.heartLight.mode = heartLight.getMode();
 
-  if (nvStorage.savePreset(preset, data))
+  if (nvStorage.saveCombinedPreset(preset, data))
   {
     nvStorage.setCurrentPreset(preset);
     sendResponse("success", "Preset saved: " + presetName);
@@ -374,12 +378,16 @@ void BLEManager::sendResponse(const String &type, const String &message, bool su
 void BLEManager::sendStatusUpdate()
 {
   int currentPreset = nvStorage.getCurrentPreset();
-  FootLightPreset presetData;
+  CombinedPreset presetData;
   bool isMatched = false;
 
-  if (nvStorage.loadPreset(currentPreset, presetData))
+  if (nvStorage.loadCombinedPreset(currentPreset, presetData))
   {
-    isMatched = (presetData.volume == footLight.getVolume() && presetData.mode == footLight.getMode());
+    bool footMatched = (presetData.footLight.volume == footLight.getVolume() &&
+                        presetData.footLight.mode == footLight.getMode());
+    bool heartMatched = (presetData.heartLight.volume == heartLight.getVolume() &&
+                         presetData.heartLight.mode == heartLight.getMode());
+    isMatched = footMatched && heartMatched;
   }
 
   StaticJsonDocument<512> doc;

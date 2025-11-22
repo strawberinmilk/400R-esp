@@ -56,7 +56,7 @@ boolean Encoder::updateEncoder(int min, int max)
     fixedCount = min;
     esp32Encoder.setCount(fixedCount);
   }
-  Serial.println(String(count) + " -> " + String(fixedCount));
+  // Serial.println(String(count) + " -> " + String(fixedCount));
   currentEncoderValue = fixedCount;
   oldEncoderValue = count;
   return true;

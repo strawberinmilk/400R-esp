@@ -1,7 +1,9 @@
 #include "manager.h"
 #include "setting/feature/modeSelect.h"
-#include "setting/feature/footLightVolumeSetting.h"
-#include "setting/feature/footLightModeSetting.h"
+#include "setting/feature/volumeSettings/footLightVolumeSetting.h"
+#include "setting/feature/ledModeSettings/FootLightModeSetting.h"
+#include "setting/feature/volumeSettings/HeartLightVolumeSetting.h"
+#include "setting/feature/ledModeSettings/HeartLightModeSetting.h"
 #include "setting/feature/PresetManager.h"
 #include "setting/feature/StandbyMode.h"
 #include "interface/button.h"
@@ -10,6 +12,8 @@
 ModeSelect modeSelect;
 FootLightVolumeSetting footLightVolumeSetting;
 FootLightModeSetting footLightModeSetting;
+HeartLightVolumeSetting heartLightVolumeSetting;
+HeartLightModeSetting heartLightModeSetting;
 PresetManager presetManager;
 StandbyMode standbyMode;
 extern Button button;

@@ -12,7 +12,8 @@ private:
     MENU_SELECT_PRESET, // プリセット選択
     MENU_SAVE_PRESET,   // プリセット保存
     MENU_LOAD_PRESET,   // プリセット読み込み
-    MENU_CURRENT_INFO   // 現在の設定情報表示
+    MENU_CURRENT_INFO,  // 現在の設定情報表示
+    MENU_CLEAR_ALL      // 全プリセット消去
   };
 
   MenuState currentState;
@@ -23,6 +24,7 @@ private:
   void updateSavePreset();
   void updateLoadPreset();
   void updateCurrentInfo();
+  void updateClearAll();
   void displayPresetInfo();
 
 public:

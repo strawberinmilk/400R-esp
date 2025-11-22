@@ -1,5 +1,4 @@
-#include "FootLightVolumeSetting.h"
-#include "output/PwmLeds/footLight.h"
+#include "BaseLedModeSetting.h"
 #include "interface/display.h"
 #include "interface/encoder.h"
 #include "config/pinConfig.h"
@@ -8,7 +7,6 @@
 #include "setting/feature/standbyMode.h"
 
 extern Display display;
-extern FootLight footLight;
 extern Encoder encoder;
 extern Button button;
 extern SettingManager settingManager;
@@ -17,35 +15,40 @@ extern StandbyMode standbyMode;
 /**
  * コンストラクタ
  */
-FootLightVolumeSetting::FootLightVolumeSetting()
+BaseLedModeSetting::BaseLedModeSetting(PwmLed *led, const char *name)
+    : targetLed(led), ledName(name)
 {
-  name = "FootLightVolume";
+  this->name = name;
 }
 
 /**
  * 開始処理
  */
-void FootLightVolumeSetting::start()
+void BaseLedModeSetting::start()
 {
-  display.print("Foot Light Volume", "Adjusting...");
-  int initialVolume = footLight.getVolume();
+  // 現在のモードを取得
+  int initialValue = (int)targetLed->getMode();
+
   encoder.startEncoder(
-      initialVolume,
+      initialValue,
       0,
-      255);
+      PwmLed::getModeCount() - 1); // 0 から モード数-1 まで
 }
 
 /**
  * 更新処理
  */
-void FootLightVolumeSetting::update()
+void BaseLedModeSetting::update()
 {
   if (encoder.isUpdateEncoder())
   {
     // エンコーダの値が変わった場合
-    // TODO: 液晶一部分の書換にする
-    display.print("Foot Light Volume", String(encoder.getCurrentValue()).c_str());
-    footLight.setVolume(encoder.getCurrentValue());
+    int currentMode = encoder.getCurrentValue();
+    const char *modeText = PwmLed::getModeText((LedMode)currentMode);
+
+    String title = String(ledName) + " Mode";
+    display.print(title.c_str(), modeText);
+    targetLed->setMode((LedMode)currentMode);
   }
 
   if (button.isPushAwait(SELECT_SW_PIN))
@@ -57,9 +60,10 @@ void FootLightVolumeSetting::update()
 /**
  * クリーンアップ処理
  */
-void FootLightVolumeSetting::cleanup()
+void BaseLedModeSetting::cleanup()
 {
-  display.print("Foot Light Volume", "success");
+  String title = String(ledName) + " Mode";
+  display.print(title.c_str(), "success");
   encoder.stopEncoder();
   delay(500);
   settingManager.currentFeature = &standbyMode;

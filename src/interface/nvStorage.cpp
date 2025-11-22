@@ -18,7 +18,6 @@ static const PresetNameMapEntry presetNameMap[] = {
 const size_t presetNameMapSize = sizeof(presetNameMap) / sizeof(presetNameMap[0]);
 const int PRESET_COUNT = (int)presetNameMapSize;
 const int PRESET_INDEX_RIN = 0;
-String PRESET_KEYS[presetNameMapSize];
 
 // プリセット名をプリセット数値に変換
 int NvStorage::presetNameFromString(const String &name)
@@ -37,15 +36,6 @@ int NvStorage::presetNameFromString(const String &name)
 const char *NvStorage::NAMESPACE = "footlight";
 const char *NvStorage::CURRENT_PRESET_KEY = "current";
 
-// 動的プリセットキー生成
-__attribute__((constructor)) static void initPresetKeys()
-{
-  for (size_t i = 0; i < presetNameMapSize; ++i)
-  {
-    PRESET_KEYS[i] = "preset_" + String(presetNameMap[i].name);
-  }
-}
-
 /**
  * コンストラクタ
  */
@@ -58,17 +48,19 @@ NvStorage::NvStorage()
     preferences.begin(NAMESPACE, false); // 書き込み可能で開く
 
     // デフォルト値の設定
-    FootLightPreset defaultPreset;
-    defaultPreset.volume = 128; // 中間の明るさ
-    defaultPreset.mode = MODE_ON;
+    CombinedPreset defaultPreset;
+    defaultPreset.footLight.volume = 128;
+    defaultPreset.footLight.mode = MODE_ON;
+    defaultPreset.heartLight.volume = 128;
+    defaultPreset.heartLight.mode = MODE_ON;
 
     // 全プリセットにデフォルト値を設定
     for (int i = 0; i < PRESET_COUNT; i++)
     {
-      FootLightPreset existing;
-      if (!loadPreset(i, existing))
+      CombinedPreset existing;
+      if (!loadCombinedPreset(i, existing))
       {
-        savePreset(i, defaultPreset);
+        saveCombinedPreset(i, defaultPreset);
       }
     }
 
@@ -79,16 +71,16 @@ NvStorage::NvStorage()
     }
   }
   preferences.end();
-
-  Serial.println("NvStorage initialized");
 }
 
 /**
  * 初期化処理
  */
-// フットライトの現在プリセットを起動時に反映
+// フットライトとハートライトの現在プリセットを起動時に反映
 #include "output/PwmLeds/footLight.h"
+#include "output/PwmLeds/heartLight.h"
 extern FootLight footLight;
+extern HeartLight heartLight;
 
 void NvStorage::init()
 {
@@ -99,17 +91,19 @@ void NvStorage::init()
     preferences.begin(NAMESPACE, false); // 書き込み可能で開く
 
     // デフォルト値の設定
-    FootLightPreset defaultPreset;
-    defaultPreset.volume = 128; // 中間の明るさ
-    defaultPreset.mode = MODE_ON;
+    CombinedPreset defaultPreset;
+    defaultPreset.footLight.volume = 128;
+    defaultPreset.footLight.mode = MODE_ON;
+    defaultPreset.heartLight.volume = 128;
+    defaultPreset.heartLight.mode = MODE_ON;
 
     // 全プリセットにデフォルト値を設定
     for (int i = 0; i < PRESET_COUNT; i++)
     {
-      FootLightPreset existing;
-      if (!loadPreset(i, existing))
+      CombinedPreset existing;
+      if (!loadCombinedPreset(i, existing))
       {
-        savePreset(i, defaultPreset);
+        saveCombinedPreset(i, defaultPreset);
       }
     }
 
@@ -121,69 +115,58 @@ void NvStorage::init()
   }
   preferences.end();
 
-  // 起動時にcurrentPresetをfootLightへ反映
+  // 起動時にcurrentPresetを両方のLEDへ反映
   int current = getCurrentPreset();
-  FootLightPreset preset;
-  if (loadPreset(current, preset))
+  CombinedPreset preset;
+  if (loadCombinedPreset(current, preset))
   {
-    footLight.setVolume(preset.volume);
-    footLight.setMode(preset.mode);
+    footLight.setVolume(preset.footLight.volume);
+    footLight.setMode(preset.footLight.mode);
+    heartLight.setVolume(preset.heartLight.volume);
+    heartLight.setMode(preset.heartLight.mode);
   }
 }
 
 /**
- * プリセット保存
+ * 統合プリセット保存（FootLight + HeartLight）
  */
-bool NvStorage::savePreset(int preset, const FootLightPreset &data)
+bool NvStorage::saveCombinedPreset(int preset, const CombinedPreset &data)
 {
   if (preset >= PRESET_COUNT)
     return false;
 
   preferences.begin(NAMESPACE, false);
 
-  // 構造体をバイト配列として保存
-  size_t written = preferences.putBytes(PRESET_KEYS[preset].c_str(), &data, sizeof(FootLightPreset));
+  String key = String(presetNameMap[preset].name);
+  size_t written = preferences.putBytes(key.c_str(), &data, sizeof(CombinedPreset));
 
   preferences.end();
 
-  if (written == sizeof(FootLightPreset))
-  {
-    Serial.printf("Preset %s saved (volume: %d, mode: %d)\n",
-                  getPresetName(preset), data.volume, data.mode);
-    return true;
-  }
-
-  return false;
+  return (written == sizeof(CombinedPreset));
 }
 
 /**
- * プリセット読み込み
+ * 統合プリセット読み込み（FootLight + HeartLight）
  */
-bool NvStorage::loadPreset(int preset, FootLightPreset &data)
+bool NvStorage::loadCombinedPreset(int preset, CombinedPreset &data)
 {
   if (preset >= PRESET_COUNT)
     return false;
 
-  preferences.begin(NAMESPACE, true); // 読み取り専用
+  preferences.begin(NAMESPACE, true);
 
-  size_t dataSize = preferences.getBytesLength(PRESET_KEYS[preset].c_str());
-  if (dataSize != sizeof(FootLightPreset))
+  String key = String(presetNameMap[preset].name);
+  size_t dataSize = preferences.getBytesLength(key.c_str());
+  if (dataSize != sizeof(CombinedPreset))
   {
     preferences.end();
     return false;
   }
 
-  size_t read = preferences.getBytes(PRESET_KEYS[preset].c_str(), &data, sizeof(FootLightPreset));
+  size_t read = preferences.getBytes(key.c_str(), &data, sizeof(CombinedPreset));
   preferences.end();
 
-  if (read == sizeof(FootLightPreset))
-  {
-    Serial.printf("Preset %s loaded (volume: %d, mode: %d)\n",
-                  getPresetName(preset), data.volume, data.mode);
-    return true;
-  }
-
-  return false;
+  return (read == sizeof(CombinedPreset));
 }
 
 /**
@@ -243,8 +226,6 @@ void NvStorage::clearAll()
   preferences.begin(NAMESPACE, false);
   preferences.clear();
   preferences.end();
-
-  Serial.println("All presets cleared");
 }
 
 /**

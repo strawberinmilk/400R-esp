@@ -3,8 +3,10 @@
 #include "interface/encoder.h"
 #include "interface/button.h"
 #include "config/pinConfig.h"
-#include "FootLightVolumeSetting.h"
-#include "FootLightModeSetting.h"
+#include "./VolumeSettings/FootLightVolumeSetting.h"
+#include "./ledModeSettings/FootLightModeSetting.h"
+#include "./VolumeSettings/HeartLightVolumeSetting.h"
+#include "./ledModeSettings/HeartLightModeSetting.h"
 #include "PresetManager.h"
 #include "StandbyMode.h"
 #include "setting/manager.h"
@@ -17,6 +19,8 @@ extern Button button;
 // managerで定義
 extern FootLightVolumeSetting footLightVolumeSetting;
 extern FootLightModeSetting footLightModeSetting;
+extern HeartLightVolumeSetting heartLightVolumeSetting;
+extern HeartLightModeSetting heartLightModeSetting;
 extern PresetManager presetManager;
 extern StandbyMode standbyMode;
 extern SettingManager settingManager;
@@ -72,10 +76,20 @@ void ModeSelect::update()
     }
     else if (settingManager.selectedMode == 3)
     {
+      // Heart Light Volume
+      startFeature(heartLightVolumeSetting);
+    }
+    else if (settingManager.selectedMode == 4)
+    {
+      // Heart Light Mode
+      startFeature(heartLightModeSetting);
+    }
+    else if (settingManager.selectedMode == 5)
+    {
       // Preset Manager
       startFeature(presetManager);
     }
-    else if (settingManager.selectedMode == 4)
+    else if (settingManager.selectedMode == 6)
     {
       // Standby Mode
       startFeature(standbyMode);
@@ -90,8 +104,6 @@ void ModeSelect::cleanup()
   settingManager.currentFeature = nullptr;
   settingManager.selectedMode = -1;
   settingManager.modeSelected = false;
-
-  Serial.println("ModeSelect cleaned up");
 }
 
 void ModeSelect::startFeature(BaseSetting &newFeature)

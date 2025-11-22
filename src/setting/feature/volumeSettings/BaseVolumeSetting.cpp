@@ -1,15 +1,12 @@
-#include "FootLightModeSetting.h"
-#include "output/PwmLeds/footLight.h"
+#include "BaseVolumeSetting.h"
 #include "interface/display.h"
 #include "interface/encoder.h"
 #include "config/pinConfig.h"
 #include "interface/button.h"
 #include "setting/manager.h"
-
 #include "setting/feature/standbyMode.h"
 
 extern Display display;
-extern FootLight footLight;
 extern Encoder encoder;
 extern Button button;
 extern SettingManager settingManager;
@@ -18,38 +15,37 @@ extern StandbyMode standbyMode;
 /**
  * コンストラクタ
  */
-FootLightModeSetting::FootLightModeSetting()
+BaseVolumeSetting::BaseVolumeSetting(PwmLed *led, const char *name)
+    : targetLed(led), ledName(name)
 {
-  name = "FootLightMode";
+  this->name = name;
 }
 
 /**
- * 初期化処理
+ * 開始処理
  */
-void FootLightModeSetting::start()
+void BaseVolumeSetting::start()
 {
-  // 現在のモードを取得
-  int initialValue = (int)footLight.getMode();
-
+  String title = String(ledName) + " Volume";
+  display.print(title.c_str(), "Adjusting...");
+  int initialVolume = targetLed->getVolume();
   encoder.startEncoder(
-      initialValue,
+      initialVolume,
       0,
-      FootLight::getModeCount() - 1); // 0 から モード数-1 まで
+      255);
 }
 
 /**
  * 更新処理
  */
-void FootLightModeSetting::update()
+void BaseVolumeSetting::update()
 {
   if (encoder.isUpdateEncoder())
   {
     // エンコーダの値が変わった場合
-    int currentMode = encoder.getCurrentValue();
-    const char *modeText = FootLight::getModeText((FootLightMode)currentMode);
-
-    display.print("Foot Light Mode", modeText);
-    footLight.setMode((FootLightMode)currentMode);
+    String title = String(ledName) + " Volume";
+    display.print(title.c_str(), String(encoder.getCurrentValue()).c_str());
+    targetLed->setVolume(encoder.getCurrentValue());
   }
 
   if (button.isPushAwait(SELECT_SW_PIN))
@@ -61,9 +57,10 @@ void FootLightModeSetting::update()
 /**
  * クリーンアップ処理
  */
-void FootLightModeSetting::cleanup()
+void BaseVolumeSetting::cleanup()
 {
-  display.print("Foot Light Mode", "success");
+  String title = String(ledName) + " Volume";
+  display.print(title.c_str(), "success");
   encoder.stopEncoder();
   delay(500);
   settingManager.currentFeature = &standbyMode;

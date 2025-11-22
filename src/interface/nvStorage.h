@@ -4,19 +4,28 @@
 
 #include <Arduino.h>
 #include <Preferences.h>
-#include "output/PwmLeds/footLight.h"
+#include "output/PwmLed.h"
 
 // グローバルプリセット情報
 extern const int PRESET_COUNT;
 extern const int PRESET_INDEX_RIN;
-extern String PRESET_KEYS[];
 
-// プリセット構造体
-struct FootLightPreset
+// プリセット構造体（汎用）
+struct LedPreset
 {
-  int volume;         // 明るさ (0-255)
-  FootLightMode mode; // モード
+  int volume;   // 明るさ (0-255)
+  LedMode mode; // モード
 };
+
+// 統合プリセット構造体（FootLight + HeartLight）
+struct CombinedPreset
+{
+  LedPreset footLight;
+  LedPreset heartLight;
+};
+
+// 互換性のためのエイリアス
+typedef LedPreset FootLightPreset;
 
 class NvStorage
 {
@@ -29,9 +38,9 @@ public:
   NvStorage();
   void init();
 
-  // プリセット操作
-  bool savePreset(int preset, const FootLightPreset &data);
-  bool loadPreset(int preset, FootLightPreset &data);
+  // 統合プリセット操作
+  bool saveCombinedPreset(int preset, const CombinedPreset &data);
+  bool loadCombinedPreset(int preset, CombinedPreset &data);
 
   // 現在のプリセット管理
   bool setCurrentPreset(int preset);
